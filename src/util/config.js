@@ -5,6 +5,13 @@ import fs from 'fs/promises';
 const DEFAULT_CONFIG_NAME = 'config.json';
 const APP_DIR_NAME = 'aic-cli';
 
+const defaultConfig = {
+  apiKey: null,
+  model: 'gemini-2.5-flash-lite',
+  // short cut for using --auto flag
+  commitGeneratedMessages: false,
+}
+
 export function getConfigDir() {
   const xdg = process.env.XDG_CONFIG_HOME;
   if (xdg && xdg.length) return path.join(xdg, APP_DIR_NAME);
@@ -16,13 +23,17 @@ export function getConfigPath() {
   return path.join(getConfigDir(), DEFAULT_CONFIG_NAME);
 }
 
+/**
+ * Load the configuration from the config file.
+ * @returns {Promise<Object>} The configuration object.
+ */
 export async function loadConfig() {
   const p = getConfigPath();
   try {
     const raw = await fs.readFile(p, 'utf8');
     return JSON.parse(raw);
   } catch (err) {
-    return {};
+    return defaultConfig;
   }
 }
 
