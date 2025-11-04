@@ -52,7 +52,7 @@ export async function previousGitCommitMessages(n = 5) {
       .split("\n")
       .filter(Boolean)
       .filter(
-        (line) => !line.startsWith("Author:") && !line.startsWith("Date:")
+        (line) => line.startsWith("    ") // commit message lines are indented by 4 spaces
       );
     return lines
       .map((line) => line.trim().replace(/^.*? - /, ""))
