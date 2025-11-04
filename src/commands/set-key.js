@@ -1,5 +1,6 @@
 import {
-  setApiKey,
+  loadConfig,
+  saveConfig
 } from "../util/config.js";
 import { intro, outro, text, isCancel } from "@clack/prompts";
 
@@ -24,6 +25,9 @@ export default async function setKeyCommand(options) {
     }
   }
 
-  await setApiKey(key);
+  const cfg = await loadConfig();
+  cfg.apiKey = key;
+  await saveConfig(cfg);
+  
   outro("API key saved successfully.");
 }
