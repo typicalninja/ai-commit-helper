@@ -1,6 +1,6 @@
 import {
   setApiKey,
-} from "../config.js";
+} from "../util/config.js";
 import { intro, outro, text, isCancel } from "@clack/prompts";
 
 export default async function setKeyCommand(options) {

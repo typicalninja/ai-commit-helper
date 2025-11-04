@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { getApiKey } from "../config.js";
+import { getApiKey } from "./config.js";
 
 export async function getGenAI() {
   return new GoogleGenAI({

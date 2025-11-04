@@ -1,4 +1,4 @@
-import { getApiKey, getConfigPath } from "../config.js";
+import { getApiKey, getConfigPath } from "../util/config.js";
 
 function obuscureKey(key) {
   if (key.length <= 8) {
