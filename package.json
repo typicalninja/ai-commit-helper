@@ -1,5 +1,5 @@
 {
-  "name": "aic-commit-helper",
+  "name": "aic",
   "version": "0.1.0",
   "description": "A small commit-message helper CLI using Google Gemini (configurable model).",
   "author": "",
