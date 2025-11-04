@@ -6,6 +6,7 @@ import {
   previousGitCommitMessages,
   getStaged,
   commitStaged,
+  getBranchName,
 } from "../util/git.js";
 
 export default async function generateCommand(options) {
@@ -39,9 +40,15 @@ export default async function generateCommand(options) {
     `Got ${previousCommits.length} previous commit messages for context.`
   );
 
+  const additionalInstructions = await text({
+    message:
+      "Any additional instructions for the commit message generator? (optional)",
+    placeholder: "e.g., Focus on performance improvements",
+  });
+  const branchName = await getBranchName();
   const commitGenSpinner = spinner();
   commitGenSpinner.start("Generating commit message...");
-  const commitMessage = await getCommitMessage(stagedChanges, previousCommits);
+  const commitMessage = await getCommitMessage(stagedChanges, previousCommits, additionalInstructions, branchName);
   commitGenSpinner.stop("Commit message generated.");
 
   const trimmedMessage = commitMessage.trim();

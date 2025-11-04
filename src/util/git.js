@@ -18,6 +18,18 @@ export async function inGitRepository() {
   }
 }
 
+export async function getBranchName() {
+  try {
+    const { stdout, exitCode } = await execa`git rev-parse --abbrev-ref HEAD`;
+    if (exitCode !== 0) {
+      throw new Error("Failed to get branch name");
+    }
+    return stdout.trim();
+  } catch {
+    return null;
+  }
+}
+
 export async function getStaged() {
     try {
         const { stdout, exitCode } = await execa`git diff --staged`;
