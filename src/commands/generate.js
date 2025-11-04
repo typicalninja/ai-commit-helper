@@ -54,12 +54,14 @@ export default async function generateCommand(options) {
     message: "Generated Commit Message:",
     initialValue: commitMessage.trim(),
   });
-
+  const autoCommit = options.auto || false;
   const shouldCommit =
     toCommit &&
-    (await confirm({
-      message: "Do you want to use this commit message?",
-    }));
+    (autoCommit ||
+      (await confirm({
+        message: "Do you want to commit with this message?",
+        initialValue: true,
+      })));
 
   if (isCancel(shouldCommit) || !shouldCommit) {
     log.info("Commit message not used.");
