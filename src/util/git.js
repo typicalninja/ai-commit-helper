@@ -49,3 +49,12 @@ export async function previousGitCommitMessages(n = 5) {
     return [];
   }
 }
+
+export async function commitStaged(message) {
+    try {
+        const { exitCode } = await execa`git commit -m ${message}`;
+        return exitCode === 0;
+    } catch {
+        return false;
+    }
+}
