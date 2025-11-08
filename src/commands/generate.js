@@ -61,6 +61,11 @@ export default async function generateCommand(options) {
     message: "Generated Commit Message:",
     initialValue: commitMessage.trim(),
   });
+  if(isCancel(toCommit)) {
+    log.info("Commit will need to be done manually.");
+    return 0;
+  }
+
   const autoCommit = options.auto || false;
   const shouldCommit =
     toCommit &&
