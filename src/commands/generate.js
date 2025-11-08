@@ -40,15 +40,30 @@ export default async function generateCommand(options) {
     `Got ${previousCommits.length} previous commit messages for context.`
   );
 
-  const additionalInstructions = await text({
-    message:
-      "Any additional instructions for the commit message generator? (optional)",
-    placeholder: "e.g., Focus on performance improvements",
-  });
+  let context;
+
+  if (options.context) {
+    if( typeof options.context === 'string' && options.context.trim().length > 0 ) {
+      context = options.context.trim();
+    }
+    else {
+      context = await text({
+        message:
+          "Please provide additional instructions for the commit message generator:",
+        placeholder: "e.g., Focus on performance improvements",
+      });
+
+      if (isCancel(context)) {
+        log.error("Cancelled!");
+        context = null;
+      }
+    }
+  } 
+
   const branchName = await getBranchName();
   const commitGenSpinner = spinner();
   commitGenSpinner.start("Generating commit message...");
-  const commitMessage = await getCommitMessage(stagedChanges, previousCommits, additionalInstructions, branchName);
+  const commitMessage = await getCommitMessage(stagedChanges, previousCommits, context, branchName);
   commitGenSpinner.stop("Commit message generated.");
 
   const trimmedMessage = commitMessage.trim();

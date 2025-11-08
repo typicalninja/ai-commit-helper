@@ -25,6 +25,7 @@ program
     .command("generate")
     .description("Generate a commit message")
     .option("-a, --auto", "Automatically commit the generated message without prompting")
+    .option("-c, --context [context]", "Additional instructions for the commit message generator")
     .action(generateCommand);
 
 program.parseAsync(process.argv);
