@@ -8,6 +8,7 @@ import {
   commitStaged,
   getBranchName,
 } from "../util/git.js";
+import { outro } from "@clack/prompts";
 
 export default async function generateCommand(options) {
   intro("Generating Commit Message...");
@@ -72,35 +73,61 @@ export default async function generateCommand(options) {
     return 1;
   }
 
-  const toCommit = await text({
-    message: "Generated Commit Message:",
-    initialValue: commitMessage.trim(),
-  });
-  if(isCancel(toCommit)) {
-    log.info("Commit will need to be done manually.");
-    return 0;
+  // log the generated commit message
+  log.info(commitMessage);
+
+  let action = "menu";
+  let toCommit = commitMessage;
+
+  while (action === "menu") {
+    action = await text({
+      message:
+        "Choose an action: (c)ommit, (e)dit message, (a)bort",
+      placeholder: "c/e/a",
+    });
+
+    if (isCancel(action)) {
+      log.error("Cancelled!");
+      return 0;
+    }
+
+    action = action.toLowerCase();
+
+    if (action === "e") {
+      const editedMessage = await text({
+        message: "Edit the commit message:",
+        initialValue: toCommit,
+      });
+
+      if (isCancel(editedMessage)) {
+        log.error("Cancelled!");
+        return 0;
+      }
+
+      if (editedMessage.trim().length === 0) {
+        log.error("Commit message cannot be empty.");
+        action = "menu";
+      } else {
+        toCommit = editedMessage;
+        action = "menu";
+      }
+    } else if (action === "a") {
+      log.info("Aborted by user.");
+      return 0;
+    } else if (action !== "c") {
+      log.error("Invalid action. Please choose c, e, r, or a.");
+      action = "menu";
+    }
   }
 
-  const autoCommit = options.auto || false;
-  const shouldCommit =
-    toCommit &&
-    (autoCommit ||
-      (await confirm({
-        message: "Do you want to commit with this message?",
-        initialValue: true,
-      })));
-
-  if (isCancel(shouldCommit) || !shouldCommit) {
-    log.info("Commit message not used.");
-    return 0;
-  }
 
   const commitSuccess = await commitStaged(toCommit);
   if (commitSuccess) {
     log.success("Changes committed successfully.");
-    return 0;
   } else {
     log.error("Failed to commit changes.");
-    return 1;
   }
+
+  outro("Done!");
+  return 0;
 }
