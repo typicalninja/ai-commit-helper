@@ -99,7 +99,7 @@ export default async function generateCommand(options) {
     console.log("");
     const spinner = ora('Generating commit message...').start();
     const commitMessage = await aiModel.generateCommitMessage(aiContextString)
-    spinner.stop();
+    spinner.succeed("Commit message generated.");
     const finalMessage = commitMessage.trim();
     console.log("\nGenerated Commit Message:\n");
     console.log(finalMessage);
