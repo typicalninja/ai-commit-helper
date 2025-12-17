@@ -20,6 +20,7 @@
     "commander": "^11.0.0",
     "execa": "^9.6.0",
     "lodash.truncate": "^4.4.2",
+    "ora": "^9.0.0",
     "parse-diff": "^0.11.1",
     "undici": "^6.0.0",
     "yoctocolors": "^2.1.2"
