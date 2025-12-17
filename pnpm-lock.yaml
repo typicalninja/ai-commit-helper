@@ -20,9 +20,18 @@ importers:
       execa:
         specifier: ^9.6.0
         version: 9.6.0
+      lodash.truncate:
+        specifier: ^4.4.2
+        version: 4.4.2
+      parse-diff:
+        specifier: ^0.11.1
+        version: 0.11.1
       undici:
         specifier: ^6.0.0
         version: 6.22.0
+      yoctocolors:
+        specifier: ^2.1.2
+        version: 2.1.2
 
 packages:
 
@@ -221,6 +230,9 @@ packages:
   jws@4.0.0:
     resolution: {integrity: sha512-KDncfTmOZoOMTFG4mBlG0qUIOlc03fmzH+ru6RgYVZhPkyiy/92Owlt/8UEN+a4TXR1FQetfIpJE8ApdvdVxTg==}
 
+  lodash.truncate@4.4.2:
+    resolution: {integrity: sha512-jttmRe7bRse52OsWIMDLaXxWqRAmtIUccAQ3garviCqJjafXOfNMO0yMfNpdD6zbGaTU0P5Nz7e7gAT6cKmJRw==}
+
   lru-cache@10.4.3:
     resolution: {integrity: sha512-JNAzZcXrCt42VGLuYz0zfAzDfAvJWW6AfYlDBQyDV5DClI2m5sAmK+OIO7s59XfsRsWHp02jAJrRadPRGTt6SQ==}
 
@@ -250,6 +262,9 @@ packages:
 
   package-json-from-dist@1.0.1:
     resolution: {integrity: sha512-UEZIS3/by4OC8vL3P2dTXRETpebLI2NiI5vIrjaD/5UtrkFX/tNbwjTSRAGC/+7CAo2pIcBaRgWmcBBHcsaCIw==}
+
+  parse-diff@0.11.1:
+    resolution: {integrity: sha512-Oq4j8LAOPOcssanQkIjxosjATBIEJhCxMCxPhMu+Ci4wdNmAEdx0O+a7gzbR2PyKXgKPvRLIN5g224+dJAsKHA==}
 
   parse-ms@4.0.0:
     resolution: {integrity: sha512-TXfryirbmq34y8QBwgqCVLi+8oA3oWx2eAnSn62ITyEhEYaWRlVZ2DvMM9eZbMs/RfxPu/PK/aBLyGj4IrqMHw==}
@@ -576,6 +591,8 @@ snapshots:
       jwa: 2.0.1
       safe-buffer: 5.2.1
 
+  lodash.truncate@4.4.2: {}
+
   lru-cache@10.4.3: {}
 
   minimatch@9.0.5:
@@ -600,6 +617,8 @@ snapshots:
       unicorn-magic: 0.3.0
 
   package-json-from-dist@1.0.1: {}
+
+  parse-diff@0.11.1: {}
 
   parse-ms@4.0.0: {}
 
