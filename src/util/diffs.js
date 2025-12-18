@@ -63,7 +63,7 @@ export function diffFileToString(file) {
 export function getDiffSimplified(file) {
   const name = file.renamed
     ? `${file.from} → ${file.to}`
-    : file.to || file.from;
+    : file.from || file.to;
 
   const status = file.new
     ? green("NEW ")
