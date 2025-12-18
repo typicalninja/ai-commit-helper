@@ -20,21 +20,47 @@ export function isNoisyFile(file) {
 // Converts a parsed diff file object into a string representation
 // to be sent to an AI model as such it is minimal as possible to save tokens
 export function diffFileToString(file) {
-  const name = file.renamed
-    ? `${file.from} → ${file.to}`
-    : file.to || file.from;
+  // extract flags
+  // 3 states a file can be in
+  // 1 -> a new file
+  // 2 -> a deleted file
+  // 3 -> a modified file
+  // modified file can mean either content changes or rename of file
+  const newFile = file.new;
+  const deletedFile = file.deleted;
+  const modifiedFile = !newFile && !deletedFile;
+  // renamed is implied by from and to fields being different
+  const renamed = modifiedFile && file.from && file.to && (file.from !== file.to);
+  let out = "File: ";
 
-  const operation = file.deleted ? "Deleted" : file.new ? "New File" : "Modified";
+  if(newFile) {
+    // new file have only 'to' field
+    // and from is /dev/null
+    out += `ADDED ${file.to}`;
+  }
+  else if(deletedFile) {
+    // deleted file have only 'from' field
+    // and to is /dev/null
+    out += `DELETED ${file.from}`;
+  }
+  else if(renamed) {
+    out += `RENAMED ${file.from} → ${file.to}`;
+  }
+  else {
+    // modified file
+    out += `MODIFIED ${file.to}`;
+  }
+  
+  // add the deletion/addition stats
+  out += ` (+${file.additions} -${file.deletions})\n`;
 
   if (file.binary) {
-    return `File: ${operation} ${name}\n[Binary file omitted]\n`;
+    return out + "[Binary file changes omitted]";
   }
 
   if (isNoisyFile(file)) {
-    return `File: ${operation} ${name} (+${file.additions} -${file.deletions})\n[Diff omitted]\n`;
+    return out + `[Diff omitted due to large changes]`;
   }
-
-  let out = `File: ${operation} ${name} (+${file.additions} -${file.deletions})\n`;
 
   let lines = 0;
   const MAX_LINES = 40;
@@ -53,7 +79,7 @@ export function diffFileToString(file) {
     }
   }
 
-  return out;
+  return out.toString();
 }
 
 
