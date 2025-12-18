@@ -62,7 +62,6 @@ export default async function generateCommand(options) {
 
   // test
   const diffStrings = parsedDiffs.map((fileDiff) => diffFileToString(fileDiff));
-
   // send this to the model to generate the commit message
   // information to make available to the model:
   // - current branch name - done
@@ -124,7 +123,7 @@ export default async function generateCommand(options) {
   while (!exitMenu) {
     console.clear();
     console.log(dim("-".repeat(50)));
-    displayStagedDiffsSummary(displayDiffSlice, parsedDiffs.length);
+    displayStagedDiffsSummary(displayDiffSlice, parsedDiffs.length - displayDiffSlice.length);
     console.log(`\n${finalMessage}\n`);
 
     const answer = await select({
@@ -142,6 +141,11 @@ export default async function generateCommand(options) {
           name: "Abort",
           value: "abort",
         },
+        {
+          name: "Debug: Show AI Context",
+          value: "debug",
+          
+        }
       ],
     });
 
@@ -167,6 +171,15 @@ export default async function generateCommand(options) {
         } else {
           logger.warn("Edited message is empty. Keeping the original message.");
         }
+        break;
+      case "debug":
+        console.log(dim("-".repeat(20)) + " AI CONTEXT " + dim("-".repeat(20)));
+        console.log(aiContextString);
+        console.log(dim("-".repeat(50)));
+        await select({
+          message: "Press enter to go back.",
+          choices: [{ name: "Back", value: "back" }],
+        });
         break;
       case "abort":
       default:
