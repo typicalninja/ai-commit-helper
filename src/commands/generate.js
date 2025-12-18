@@ -1,4 +1,4 @@
-import {  dim } from "yoctocolors";
+import { dim } from "yoctocolors";
 import {
   commit,
   ensureInGitRepository,
@@ -106,7 +106,7 @@ export default async function generateCommand(options) {
 
   const aiModel = new GoogleAIClient(apiKey);
   const spinner = ora("Generating commit message...").start();
-  const commitMessage = await aiModel.generateCommitMessage(aiContextString)
+  const commitMessage = await aiModel.generateCommitMessage(aiContextString);
   //const commitMessage = `TEST COMMIT MESSAGE GENERATED FOR STAGED CHANGES`;
   spinner.stop();
   let finalMessage = commitMessage.trim();
@@ -122,6 +122,7 @@ export default async function generateCommand(options) {
 
   while (!exitMenu) {
     console.clear();
+    displayStagedDiffsSummary(displayDiffSlice, parsedDiffs.length);
     console.log(`\n${finalMessage}\n`);
 
     const answer = await select({
@@ -173,6 +174,17 @@ export default async function generateCommand(options) {
   }
 
   return 0;
+}
+
+function displayStagedDiffsSummary(diffs, totalDiffs) {
+  diffs.forEach((fileDiff) => {
+    logger.step(getDiffSimplified(fileDiff), "STAGE");
+  });
+
+  if (totalDiffs > MAXIMUM_STAGED_FILES_TO_DISPLAY) {
+    const remainingFiles = diffs.length - MAXIMUM_STAGED_FILES_TO_DISPLAY;
+    logger.step(dim(`...and ${remainingFiles} more files.`), "STAGE");
+  }
 }
 
 // Few-Shot Examples for the AI model
