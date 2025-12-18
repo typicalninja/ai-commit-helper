@@ -101,6 +101,7 @@ export default async function generateCommand(options) {
     );
   }
 
+
   // temporary for now until we make it modular
   const apiKey = await getApiKey();
 
@@ -122,6 +123,7 @@ export default async function generateCommand(options) {
 
   while (!exitMenu) {
     console.clear();
+    console.log(dim("-".repeat(50)));
     displayStagedDiffsSummary(displayDiffSlice, parsedDiffs.length);
     console.log(`\n${finalMessage}\n`);
 
@@ -176,35 +178,43 @@ export default async function generateCommand(options) {
   return 0;
 }
 
-function displayStagedDiffsSummary(diffs, totalDiffs) {
+function displayStagedDiffsSummary(diffs, remaining = 0) {
   diffs.forEach((fileDiff) => {
     logger.step(getDiffSimplified(fileDiff), "STAGE");
   });
 
-  if (totalDiffs > MAXIMUM_STAGED_FILES_TO_DISPLAY) {
-    const remainingFiles = diffs.length - MAXIMUM_STAGED_FILES_TO_DISPLAY;
-    logger.step(dim(`...and ${remainingFiles} more files.`), "STAGE");
+  if (remaining > 0) {
+    logger.step(dim(`...and ${remaining} more diffs.`), "STAGE");
   }
 }
 
 // Few-Shot Examples for the AI model
-const AI_USER_PROMPT = `
+const AI_USER_PROMPT = `[BEGIN OF EXAMPLES]
 Examples of correct commit messages:
+Case 1: Adding dependency without other changes
+- File: package.json
+Commit: chore: add lodash as a project dependency
+Case 2: Fixing a bug in user authentication
+- File: auth.js
+- File: userController.js
+Commit: fix: resolve user authentication issue on login
+Case 3: Updating documentation
+- File: README.md
+Commit: docs: update installation instructions in README
+Case 4: Refactoring code within a certain obvious group of files
+- File: utils.js
+- File: helpers.js
+Commit: refactor(utils): improve code structure in utility functions
+Case 5: Implementing a new feature with detailed changes
+- File: feature.js
+- File: featureDisplay.js
+Commit: feat: add user profile feature with tests
 
-feat(auth): add OAuth2 login support
-Implement OAuth2 authentication for login flow.
+Implemented a new user profile feature allowing users to view and edit their profiles.
+[/END OF EXAMPLES]
 
-fix(auth): reject empty password submissions
-
-chore(deps): upgrade axios to 1.5.0
-
-docs(readme): clarify environment setup instructions
-Update README to include steps for local environment setup.
-
-refactor(api): simplify response serialization
-
-Now generate a **single valid Conventional Commit message** for the staged changes above. Output only the commit message.
-`;
+Now generate a **single valid Conventional Commit message** for the staged changes above.
+Output only the commit message.`;
 
 /**
  * Convert AI context inputs into a string.
@@ -216,27 +226,24 @@ Now generate a **single valid Conventional Commit message** for the staged chang
  * @returns {string}
  */
 function convertAiContextToString(context) {
-  let out = `Current Branch: ${context.currentBranchName}\n\n`;
+  let out = `1. Current Branch: ${context.currentBranchName}\n`;
 
   if (context.recentCommits && context.recentCommits.length > 0) {
-    out += `Recent Commits:\n`;
+    out += `2. Recent Commits:\n`;
     context.recentCommits.forEach((commit, index) => {
       out += `[${index + 1}] ${commit}\n`;
     });
-    out += `\n`;
   }
 
   if (context.stagedDiffs && context.stagedDiffs.length > 0) {
-    out += `Staged Changes:\n`;
+    out += `3. Staged Changes:\n`;
     context.stagedDiffs.forEach((diff, index) => {
-      out += `--- File ${index + 1} ---\n`;
-      out += `${diff}\n`;
+      out += `[${index + 1}] ${diff}\n`;
     });
-    out += `\n`;
   }
 
   if (context.userContext && context.userContext.trim().length > 0) {
-    out += `Additional Context:\n${context.userContext}\n\n`;
+    out += `4. Additional Context:\n${context.userContext}\n\n`;
   }
 
   return out + AI_USER_PROMPT;

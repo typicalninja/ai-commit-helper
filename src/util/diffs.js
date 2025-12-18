@@ -24,16 +24,17 @@ export function diffFileToString(file) {
     ? `${file.from} → ${file.to}`
     : file.to || file.from;
 
+  const operation = file.deleted ? "Deleted" : file.new ? "New File" : "Modified";
+
   if (file.binary) {
-    return `File: ${name}\n[Binary file omitted]\n`;
+    return `File: ${operation} ${name}\n[Binary file omitted]\n`;
   }
 
-  const totalChanges = file.additions + file.deletions;
   if (isNoisyFile(file)) {
-    return `File: ${name} (+${file.additions} -${file.deletions})\n[Diff omitted]\n`;
+    return `File: ${operation} ${name} (+${file.additions} -${file.deletions})\n[Diff omitted]\n`;
   }
 
-  let out = `File: ${name} (+${file.additions} -${file.deletions})\n`;
+  let out = `File: ${operation} ${name} (+${file.additions} -${file.deletions})\n`;
 
   let lines = 0;
   const MAX_LINES = 40;
@@ -44,7 +45,8 @@ export function diffFileToString(file) {
         out +=
           `${change.type === "add" ? "+" : "-"}${change.content}\n`;
         if (++lines >= MAX_LINES) {
-          out += "[… changes omitted]\n";
+          const omittedLines = file.additions + file.deletions - lines;
+          out += `[... ${omittedLines} more lines omitted ...]\n`;
           return out;
         }
       }
