@@ -14,7 +14,8 @@ import truncate from "lodash.truncate";
 import { getApiKey } from "../util/config.js";
 import { GoogleAIClient } from "../util/ai/gemini-flash.js";
 import ora from "ora";
-import { editor, select } from "@inquirer/prompts";
+import { editor } from "@inquirer/prompts";
+import { askQuestion } from "../util/prompt.js";
 
 const MAXIMUM_STAGED_FILES_TO_DISPLAY = 5;
 // this is the safest for the AI model to handle and actually generate a good response
@@ -126,38 +127,20 @@ export default async function generateCommand(options) {
     displayStagedDiffsSummary(displayDiffSlice, parsedDiffs.length - displayDiffSlice.length);
     console.log(`\n${finalMessage}\n`);
 
-    const answer = await select({
-      message: "What do you want to do?",
-      choices: [
-        {
-          name: "Commit the changes",
-          value: "commit",
-        },
-        {
-          name: "Edit the commit message",
-          value: "edit",
-        },
-        {
-          name: "Abort",
-          value: "abort",
-        },
-        {
-          name: "Debug: Show AI Context",
-          value: "debug",
-          
-        }
-      ],
-    });
+    const answer = await askQuestion(
+      `${dim("Use this commit?")} [c]ommit / [e]dit / [d]ebug / [a]bort: `
+    );
+    const action = answer.trim().toLowerCase().charAt(0);
 
-    switch (answer) {
-      case "commit":
+    switch (action) {
+      case "c":
         // perform the commit
         exitMenu = true;
         // commit staged files with the finalMessage
         await commit(finalMessage);
         console.log("Done!");
         break;
-      case "edit":
+      case "e":
         // open editor to edit the message
         const editedMessage = await editor({
           message: "Edit the commit message:",
@@ -172,16 +155,13 @@ export default async function generateCommand(options) {
           logger.warn("Edited message is empty. Keeping the original message.");
         }
         break;
-      case "debug":
+      case "d":
         console.log(dim("-".repeat(20)) + " AI CONTEXT " + dim("-".repeat(20)));
         console.log(aiContextString);
         console.log(dim("-".repeat(50)));
-        await select({
-          message: "Press enter to go back.",
-          choices: [{ name: "Back", value: "back" }],
-        });
+        await askQuestion("Press enter to go back.");
         break;
-      case "abort":
+      case "a":
       default:
         exitMenu = true;
         console.log("Bye!");
