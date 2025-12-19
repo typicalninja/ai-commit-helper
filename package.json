@@ -17,7 +17,7 @@
   "dependencies": {
     "@clack/prompts": "^0.11.0",
     "@google/genai": "^1.28.0",
-    "@inquirer/prompts": "^8.1.0",
+    "@inquirer/external-editor": "^2.0.2",
     "commander": "^11.0.0",
     "execa": "^9.6.0",
     "lodash.truncate": "^4.4.2",
