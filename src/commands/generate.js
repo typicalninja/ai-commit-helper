@@ -63,6 +63,7 @@ export default async function generateCommand(options) {
 
   // test
   const diffStrings = parsedDiffs.map((fileDiff) => diffFileToString(fileDiff));
+
   // send this to the model to generate the commit message
   // information to make available to the model:
   // - current branch name - done

@@ -66,15 +66,16 @@ export function diffFileToString(file) {
   const MAX_LINES = 40;
 
   for (const chunk of file.chunks) {
+    out += chunk.content + "\n";
     for (const change of chunk.changes) {
       if (change.type === "add" || change.type === "del") {
         out +=
           `${change.type === "add" ? "+" : "-"}${change.content}\n`;
-        if (++lines >= MAX_LINES) {
-          const omittedLines = file.additions + file.deletions - lines;
-          out += `[... ${omittedLines} more lines omitted ...]\n`;
-          return out;
-        }
+        // if (++lines >= MAX_LINES) {
+        //   const omittedLines = file.additions + file.deletions - lines;
+        //   out += `[... ${omittedLines} more lines omitted ...]\n`;
+        //   return out;
+        // }
       }
     }
   }
