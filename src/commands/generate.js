@@ -158,9 +158,12 @@ export default async function generateCommand(options) {
         edit(aiContextString);
         break;
       case "a":
-      default:
         exitMenu = true;
         console.log("Bye!");
+        break;
+      default:
+        logger.warn("Invalid option. Please choose 'c', 'e', or 'a'.");
+        break;
     }
   }
 
