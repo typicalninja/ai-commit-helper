@@ -14,7 +14,7 @@ import truncate from "lodash.truncate";
 import { getApiKey } from "../util/config.js";
 import { GoogleAIClient } from "../util/ai/gemini-flash.js";
 import ora from "ora";
-import { editor } from "@inquirer/prompts";
+import { edit } from "@inquirer/external-editor";
 import { askQuestion } from "../util/prompt.js";
 
 const MAXIMUM_STAGED_FILES_TO_DISPLAY = 5;
@@ -108,7 +108,9 @@ export default async function generateCommand(options) {
 
   const aiModel = new GoogleAIClient(apiKey);
   const spinner = ora("Generating commit message...").start();
-  const commitMessage = await aiModel.generateCommitMessage(aiContextString);
+  const commitMessage = options.ai === false
+    ? `TEST COMMIT MESSAGE GENERATED FOR STAGED CHANGES`
+    : await aiModel.generateCommitMessage(aiContextString);
   //const commitMessage = `TEST COMMIT MESSAGE GENERATED FOR STAGED CHANGES`;
   spinner.stop();
   let finalMessage = commitMessage.trim();
@@ -129,7 +131,7 @@ export default async function generateCommand(options) {
     console.log(`\n${finalMessage}\n`);
 
     const answer = await askQuestion(
-      `${dim("Use this commit?")} [c]ommit / [e]dit / [d]ebug / [a]bort: `
+      `${dim("Next?")} [c]ommit / [e]dit / [a]bort: `
     );
     const action = answer.trim().toLowerCase().charAt(0);
 
@@ -143,11 +145,7 @@ export default async function generateCommand(options) {
         break;
       case "e":
         // open editor to edit the message
-        const editedMessage = await editor({
-          message: "Edit the commit message:",
-          default: finalMessage,
-          waitForUserInput: false,
-        });
+        const editedMessage = edit(finalMessage);
         if (editedMessage && editedMessage.trim().length > 0) {
           // use the edited message
           finalMessage = editedMessage.trim();
@@ -157,10 +155,7 @@ export default async function generateCommand(options) {
         }
         break;
       case "d":
-        console.log(dim("-".repeat(20)) + " AI CONTEXT " + dim("-".repeat(20)));
-        console.log(aiContextString);
-        console.log(dim("-".repeat(50)));
-        await askQuestion("Press enter to go back.");
+        edit(aiContextString);
         break;
       case "a":
       default:
