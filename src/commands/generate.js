@@ -1,4 +1,4 @@
-import { dim } from "yoctocolors";
+import { blue, bold, dim } from "yoctocolors";
 import {
   commit,
   ensureInGitRepository,
@@ -129,9 +129,10 @@ export default async function generateCommand(options) {
     console.log(dim("-".repeat(50)));
     displayStagedDiffsSummary(displayDiffSlice, parsedDiffs.length - displayDiffSlice.length);
     console.log(`\n${finalMessage}\n`);
-
+    const dimSeparator = dim("/");
+    console.log(`${bold("COMMANDS")}: [c]ommit ${dimSeparator} [e]dit ${dimSeparator} [a]bort`)
     const answer = await askQuestion(
-      `${dim("Next?")} [c]ommit / [e]dit / [a]bort: `
+      `${bold(blue("What now"))}> `
     );
     const action = answer.trim().toLowerCase().charAt(0);
 
