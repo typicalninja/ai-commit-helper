@@ -8,6 +8,7 @@ Requirements:
 - Do not invent any changes; summarize only the provided staged changes
 - Describe what the change does, not a description about the changes.
 - Use file names, the change mode, file lines changed when creating the commit.
+- Scope is optional, if provided, it should be a single word or short identifier describing the area of the codebase affected.
 - Follow the **examples** in style, type, and formatting
 - Use neutral mood, present tense, concise subject (≤72 characters)
 - If multiple files semi-related / unrelated, summarize logically in one commit
