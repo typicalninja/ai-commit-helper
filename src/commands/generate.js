@@ -138,7 +138,7 @@ export default async function generateCommand(options) {
         await commit(finalMessage);
         console.log("Done!");
         break;
-      case "e":
+      case "e": {
         // open editor to edit the message
         const editedMessage = edit(finalMessage);
         if (editedMessage && editedMessage.trim().length > 0) {
@@ -149,6 +149,7 @@ export default async function generateCommand(options) {
           logger.warn("Edited message is empty. Keeping the original message.");
         }
         break;
+      }
       case "d":
         edit(aiContextString);
         break;
