@@ -3,14 +3,12 @@ import {
   commit,
   ensureInGitRepository,
   getCurrentBranchName,
-  getRecentCommits,
   getStagedDiff,
   hasGitInstalled,
 } from "../util/git.js";
 import logger from "../util/logger.js";
 import parseDiff from "parse-diff";
 import { diffFileToString, getDiffSimplified } from "../util/diffs.js";
-import truncate from "lodash.truncate";
 import { getApiKey } from "../util/config.js";
 import { GoogleAIClient } from "../util/ai/gemini-flash.js";
 import ora from "ora";
@@ -50,7 +48,7 @@ export default async function generateCommand(options) {
   // log the parsed diffs for each file
   const displayDiffSlice = parsedDiffs.slice(
     0,
-    MAXIMUM_STAGED_FILES_TO_DISPLAY
+    MAXIMUM_STAGED_FILES_TO_DISPLAY,
   );
   displayDiffSlice.forEach((fileDiff) => {
     logger.step(getDiffSimplified(fileDiff), "STAGE");
@@ -70,12 +68,6 @@ export default async function generateCommand(options) {
   // - staged diffs (as text) - done
   // - previous commit messages (optional, can be fetched inside the function)
   // - user-provided context (optional)
-  const contextCommits = (await getRecentCommits(3)).map((commit) =>
-    truncate(commit.subject, { length: 50 })
-  );
-  contextCommits.forEach((commit, index) => {
-    logger.step(`[${index + 1}] ${commit}`, "PREVC");
-  });
 
   let userContext = "";
   if (
@@ -88,7 +80,6 @@ export default async function generateCommand(options) {
 
   const aiContext = {
     currentBranchName,
-    recentCommits: contextCommits,
     stagedDiffs: diffStrings,
     userContext,
   };
@@ -98,19 +89,19 @@ export default async function generateCommand(options) {
   const aiContextLength = aiContextString.length;
   if (aiContextLength > MAX_CONTEXT_LENGTH) {
     logger.warn(
-      `The staged changes are quite large (${aiContextLength} characters). The generated commit message may be incomplete or inaccurate.`
+      `The staged changes are quite large (${aiContextLength} characters). The generated commit message may be incomplete or inaccurate.`,
     );
   }
-
 
   // temporary for now until we make it modular
   const apiKey = await getApiKey();
 
   const aiModel = new GoogleAIClient(apiKey);
   const spinner = ora("Generating commit message...").start();
-  const commitMessage = options.ai === false
-    ? `TEST COMMIT MESSAGE GENERATED FOR STAGED CHANGES`
-    : await aiModel.generateCommitMessage(aiContextString);
+  const commitMessage =
+    options.ai === false
+      ? `TEST COMMIT MESSAGE GENERATED FOR STAGED CHANGES`
+      : await aiModel.generateCommitMessage(aiContextString);
   //const commitMessage = `TEST COMMIT MESSAGE GENERATED FOR STAGED CHANGES`;
   spinner.stop();
   let finalMessage = commitMessage.trim();
@@ -127,13 +118,16 @@ export default async function generateCommand(options) {
   while (!exitMenu) {
     console.clear();
     console.log(dim("-".repeat(50)));
-    displayStagedDiffsSummary(displayDiffSlice, parsedDiffs.length - displayDiffSlice.length);
+    displayStagedDiffsSummary(
+      displayDiffSlice,
+      parsedDiffs.length - displayDiffSlice.length,
+    );
     console.log(`\n${finalMessage}\n`);
     const dimSeparator = dim("/");
-    console.log(`${bold("COMMANDS")}: [c]ommit ${dimSeparator} [e]dit ${dimSeparator} [a]bort`)
-    const answer = await askQuestion(
-      `${bold(blue("What now"))}> `
+    console.log(
+      `${bold("COMMANDS")}: [c]ommit ${dimSeparator} [e]dit ${dimSeparator} [a]bort`,
     );
+    const answer = await askQuestion(`${bold(blue("What now"))}> `);
     const action = answer.trim().toLowerCase().charAt(0);
 
     switch (action) {
@@ -220,14 +214,6 @@ Output only the commit message.`;
  */
 function convertAiContextToString(context) {
   let out = `1. Current Branch: ${context.currentBranchName}\n`;
-
-  if (context.recentCommits && context.recentCommits.length > 0) {
-    out += `2. Recent Commits:\n`;
-    context.recentCommits.forEach((commit, index) => {
-      out += `[${index + 1}] ${commit}\n`;
-    });
-  }
-
   if (context.stagedDiffs && context.stagedDiffs.length > 0) {
     out += `3. Staged Changes:\n`;
     context.stagedDiffs.forEach((diff, index) => {
