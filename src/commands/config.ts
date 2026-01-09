@@ -3,6 +3,8 @@ import { edit } from "@inquirer/external-editor";
 
 
 export default async function configHandlerCommand(configKey?: string, configValue?: string) {
+    // if configKey is not provided, it is guranteed that configValue is also not provided
+    // as it is a positional argument after configKey
     if(!configKey) {
         // no arguments provided, show all config
         if(config.hasKeys()) {
