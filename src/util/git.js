@@ -149,8 +149,9 @@ export async function commit(message, options = {}) {
   }
   args.push("-m", message);
 
-  const { stdout } = await runGit(args);
-  return stdout;
+  const { all, ...execaOptions } = options;
+  const result = await runGit(args, execaOptions);
+  return result.stdout;
 }
 
 /**

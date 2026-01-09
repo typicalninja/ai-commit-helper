@@ -133,10 +133,20 @@ export default async function generateCommand(options) {
     switch (action) {
       case "c":
         // perform the commit
-        exitMenu = true;
-        // commit staged files with the finalMessage
-        await commit(finalMessage);
-        console.log("Done!");
+        try {
+          // commit staged files with the finalMessage
+          await commit(finalMessage, { stdio: "inherit" });
+          console.log("Done!");
+          exitMenu = true;
+        } catch (error) {
+          // stdout and stderr are inherited, so the user sees the git output
+          console.log(
+            dim(
+              `\nCommit failed. Please fix any errors and try again. (Press Enter to continue)`,
+            ),
+          );
+          await askQuestion(""); // Wait for user input before redrawing the menu
+        }
         break;
       case "e": {
         // open editor to edit the message
