@@ -11,10 +11,21 @@ cli
   .action(configHandlerCommand);
 
 cli
-  .command("[...all]", "Run AI Commit Helper with provided arguments")
+  .command("[context]", "Generate commit message using AI")
+  .option('-d, --debug', 'Disable commit generation and output AI generated reasoning')
   .action(runGenerateCommand);
 
 // parse at the end
 cli.help();
 cli.version(pkgJson.version);
-cli.parse();
+
+try {
+  cli.parse();
+}
+catch (error) {
+  if(error instanceof Error) {
+    console.error("error:", error.message);
+  }
+
+  process.exitCode = 1;
+}
