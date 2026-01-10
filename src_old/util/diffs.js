@@ -13,9 +13,7 @@ const NOISY_FILE_THRESHOLD = 20; // total diff size
 
 export function isNoisyFile(file) {
   const totalChanges = file.additions + file.deletions;
-  const isExpectedNoisyFile = EXPECTED_NOISY_FILENAMES.includes(
-    file.to || file.from,
-  );
+  const isExpectedNoisyFile = EXPECTED_NOISY_FILENAMES.includes(file.to || file.from);
   return isExpectedNoisyFile && totalChanges > NOISY_FILE_THRESHOLD;
 }
 
@@ -32,24 +30,27 @@ export function diffFileToString(file) {
   const deletedFile = file.deleted;
   const modifiedFile = !newFile && !deletedFile;
   // renamed is implied by from and to fields being different
-  const renamed = modifiedFile && file.from && file.to && file.from !== file.to;
+  const renamed = modifiedFile && file.from && file.to && (file.from !== file.to);
   let out = "File: ";
 
-  if (newFile) {
+  if(newFile) {
     // new file have only 'to' field
     // and from is /dev/null
     out += `ADDED ${file.to}`;
-  } else if (deletedFile) {
+  }
+  else if(deletedFile) {
     // deleted file have only 'from' field
     // and to is /dev/null
     out += `DELETED ${file.from}`;
-  } else if (renamed) {
+  }
+  else if(renamed) {
     out += `RENAMED ${file.from} → ${file.to}`;
-  } else {
+  }
+  else {
     // modified file
     out += `MODIFIED ${file.to}`;
   }
-
+  
   // add the deletion/addition stats
   out += ` (+${file.additions} -${file.deletions})\n`;
 
@@ -67,20 +68,21 @@ export function diffFileToString(file) {
   for (const chunk of file.chunks) {
     out += chunk.content + "\n";
     for (const change of chunk.changes) {
-      let prefix = "";
-      
-      if (change.type === "add") {
-        prefix = "+";
-      } else if (change.type === "delete") {
-        prefix = "-";
+      if (change.type === "add" || change.type === "del") {
+        out +=
+          `${change.type === "add" ? "+" : "-"}${change.content}\n`;
+        // if (++lines >= MAX_LINES) {
+        //   const omittedLines = file.additions + file.deletions - lines;
+        //   out += `[... ${omittedLines} more lines omitted ...]\n`;
+        //   return out;
+        // }
       }
-      
-      out += `${prefix}${change.content}\n`;
     }
   }
 
   return out.toString();
 }
+
 
 /**
  * Convert a parsed diff file object into a simplified loggable string representation.
@@ -95,8 +97,8 @@ export function getDiffSimplified(file) {
   const status = file.new
     ? green("NEW ")
     : file.deleted
-      ? red("DEL ")
-      : dim("MOD ");
+    ? red("DEL ")
+    : dim("MOD ");
 
   const changes = file.binary
     ? dim("binary")

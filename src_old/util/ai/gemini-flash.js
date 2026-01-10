@@ -1,7 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
-//import { COMMIT_SYSTEM_PROMPT } from "./base.js";
+import { COMMIT_SYSTEM_PROMPT } from "./base.js";
 
-export class GoogleAIClient {
+export class GoogleAIClient  {
   #client;
 
   constructor(apiKey) {
@@ -12,12 +12,9 @@ export class GoogleAIClient {
     const response = await this.#client.models.generateContent({
       model: "gemini-2.5-flash-lite",
       contents: prompt,
-      // config: {
-      //   systemInstruction: COMMIT_SYSTEM_PROMPT
-      // }
       config: {
-        temperature: 0,
-      },
+        systemInstruction: COMMIT_SYSTEM_PROMPT
+      }
     });
     return response.text;
   }

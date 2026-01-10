@@ -1,5 +1,4 @@
-import readline from "readline";
-import { bold, blue } from "yoctocolors";
+import readline from 'readline';
 
 export function askQuestion(query) {
   const rl = readline.createInterface({
@@ -7,12 +6,10 @@ export function askQuestion(query) {
     output: process.stdout,
   });
 
-  const formattedQuestion = `${bold(`${blue(query)}`)}>` ;
-
   return new Promise((resolve) =>
-    rl.question(formattedQuestion, (ans) => {
+    rl.question(query, (ans) => {
       rl.close();
       resolve(ans);
-    }),
+    })
   );
 }

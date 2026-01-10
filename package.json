@@ -25,5 +25,11 @@
     "parse-diff": "^0.11.1",
     "undici": "^6.0.0",
     "yoctocolors": "^2.1.2"
+  },
+  "devDependencies": {
+    "@types/lodash.truncate": "^4.4.9",
+    "@types/node": "^25.0.3",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
   }
 }

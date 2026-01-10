@@ -20,21 +20,16 @@ program
   .description("View saved Gemini API key from config")
   .action(viewKeyCommand);
 
+
 program
-  .command("generate")
-  .description("Generate a commit message")
-  .alias("g")
-  .option(
-    "-a, --auto",
-    "Automatically commit the generated message without prompting",
-  )
-  .option(
-    "-c, --context [context]",
-    "Additional instructions for the commit message generator",
-  )
-  // disable ai generation for testing
-  .option("--no-ai", "Disable AI generation and use a placeholder message")
-  .option("--debug", "Enable debug mode")
-  .action(generateCommand);
+    .command("generate")
+    .description("Generate a commit message")
+    .alias("g")
+    .option("-a, --auto", "Automatically commit the generated message without prompting")
+    .option("-c, --context [context]", "Additional instructions for the commit message generator")
+    // disable ai generation for testing
+    .option("--no-ai", "Disable AI generation and use a placeholder message")
+    .action(generateCommand);
+
 
 program.parseAsync(process.argv);
