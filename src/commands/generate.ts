@@ -1,3 +1,3 @@
-export default function runGenerateCommand() {
+export default function runGenerateCommand(useContext: string) {
     
 }
