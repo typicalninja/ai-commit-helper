@@ -1,23 +1,31 @@
 import fs from 'node:fs/promises';
+import { z } from 'zod';
+
+const configSchema = z.object({
+    provider: z.object({
+        // Name of the model provider to use
+        // by default "auto" is used to select the best available provider
+        model: z.string().default("auto"),
+    }),
+});
+
+export type Config = z.infer<typeof configSchema>;
 
 class ConfigManager {
     private config_name: string;
-    /**
-     * Indicates whether the configuration has unsaved changes.
-     */
     private dirty: boolean = false;
-    /**
-     * In-memory representation of the configuration settings.
-     */
-    private config: Record<string, any> = {};
+    private config: Config = configSchema.parse({
+        provider: {
+            model: "auto",
+        }
+    });
 
     constructor() {
         this.config_name = `aic.config.json`;
     }
 
     async sync() {
-        if(this.dirty) {
-            // Save the config to disk
+        if (this.dirty) {
             this.dirty = false;
             await fs.writeFile(this.config_name, JSON.stringify(this.config, null, 2));
         }
@@ -26,30 +34,56 @@ class ConfigManager {
     async load() {
         try {
             const data = await fs.readFile(this.config_name, 'utf-8');
-            this.config = JSON.parse(data);
+            const parsed = JSON.parse(data);
+            this.config = configSchema.parse(parsed);
         } catch (error) {
             if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-                // File does not exist, start with empty config
-                this.config = {};
+                this.config = configSchema.parse({});
             } else {
                 throw error;
             }
         }
-
         return this;
     }
 
-    set(key: string, value: any) {
-        this.config[key] = value;
+    set(path: string, value: any) {
+        const keys = path.split('.');
+        let current: any = this.config;
+
+        for (let i = 0; i < keys.length - 1; i++) {
+            const key = keys[i];
+            if (!(key in current) || typeof current[key] !== 'object') {
+                current[key] = {};
+            }
+            current = current[key];
+        }
+
+        current[keys[keys.length - 1]] = value;
+
+        // Re-validate the entire config
+        this.config = configSchema.parse(this.config);
         this.dirty = true;
     }
 
-    get(key: string): any {
-        return this.config[key];    
+    get(path: string): any {
+        const keys = path.split('.');
+        let current: any = this.config;
+
+        for (const key of keys) {
+            if (current === undefined || current === null) return undefined;
+            if (!(key in current)) return undefined;
+            current = current[key];
+        }
+
+        return current;
     }
 
     hasKeys(): boolean {
         return Object.keys(this.config).length > 0;
+    }
+
+    all(): Config {
+        return this.config;
     }
 
     toString(): string {
@@ -57,9 +91,16 @@ class ConfigManager {
     }
 
     toStringPretty(): string {
-        return Object.entries(this.config)
-            .map(([key, value]) => `${key}=${value}`)
-            .join('\n');
+        const flatten = (obj: any, prefix = ''): string[] => {
+            return Object.entries(obj).flatMap(([key, value]) => {
+                const newKey = prefix ? `${prefix}.${key}` : key;
+                if (value && typeof value === 'object' && !Array.isArray(value)) {
+                    return flatten(value, newKey);
+                }
+                return [`${newKey}=${value}`];
+            });
+        };
+        return flatten(this.config).join('\n');
     }
 }
 
