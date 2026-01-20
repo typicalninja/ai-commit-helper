@@ -1,9 +1,11 @@
 import configManager from "../lib/config-manager";
 import { isInGitRepository } from "../lib/git";
 import { providerManager } from "../lib/provider-manager";
-import { cyan, dim, red, yellow } from "yoctocolors";
+import { bgGray, cyan, dim, red, yellow } from "yoctocolors";
 import { getStagedDiffs } from "../lib/git";
 import confirm from "@inquirer/confirm";
+import input from "@inquirer/input";
+import { edit } from "@inquirer/external-editor";
 
 export default async function runGenerateCommand(contextOpt: string[]) {
   const userContext = contextOpt.join(" ");
@@ -46,13 +48,53 @@ If possible, consider staging smaller changes for better performance.\n`);
   }
 
   // generate commit message
-  const finalCommitMessage = await provider.generateCommitMessage(stagedDiffs, userContext);
+  let commitMessage = await provider.generateCommitMessage(stagedDiffs, userContext);
 
   // menu to show generated commit message and options
   let exitMenu = false;
+  let invalidInput = false;
 
   while (!exitMenu) {
-    console.log(`> ${finalCommitMessage}`)
-    
+    console.clear();
+
+    if (invalidInput) {
+      console.log(`${red("Invalid input. Please try again.")}\n`);
+      invalidInput = false;
+    }
+
+    console.log(`> ${commitMessage}`)
+
+    console.log(`\n${bgGray(" COMMANDS ")} [c]ommit / [e]dit / [q]uit\n`);
+    const next = await input({
+        message: "Next"
+    })
+
+    switch (next.toLowerCase()) {
+        case "c":
+        case "commit":
+            console.log(dim("Committing changes..."));
+            break;
+
+        case "e":
+        case "edit":
+            // open editor to edit commit message
+            const edited = edit(commitMessage);
+            if (edited.trim().length === 0) {
+                console.log(red("Aborting: Commit message cannot be empty."));
+            }
+            else {
+                commitMessage = edited.trim();
+            }
+            break;
+
+        // quit the program
+        case "q":
+        case "quit":
+            exitMenu = true;
+            break;
+        default:
+            invalidInput = true;
+            break;
+    }
   }
 }
