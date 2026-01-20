@@ -1,5 +1,5 @@
 import configManager from "../lib/config-manager";
-import { isInGitRepository } from "../lib/git";
+import { commitStaged, isInGitRepository } from "../lib/git";
 import { providerManager } from "../lib/provider-manager";
 import { bgGray, cyan, dim, red, yellow } from "yoctocolors";
 import { getStagedDiffs } from "../lib/git";
@@ -85,7 +85,7 @@ If possible, consider staging smaller changes for better performance.\n`);
     switch (next.toLowerCase()) {
       case "c":
       case "commit":
-        console.log(dim("Committing changes..."));
+        await commitStaged(commitMessage);
         break;
 
       case "e":
