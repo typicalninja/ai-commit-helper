@@ -1,8 +1,11 @@
 import { ModelProvider } from "../ai/provider";
 import keytar from "keytar";
+import input from "@inquirer/input";
 
 // default providers
 import { GeminiProvider } from "../ai/providers/gemini";
+
+const SERVICE_NAME = "aic-cli";
 
 class ProviderManager {
   private providers: Map<string, ModelProvider> = new Map();
@@ -66,20 +69,37 @@ class ProviderManager {
 
     // setup api key
     const apiKeyAccount = `aic-provider-${provider.getName()}`;
-    const apiKey = await keytar.getPassword("aic-cli", apiKeyAccount);
+    const apiKey = await keytar.getPassword(SERVICE_NAME, apiKeyAccount);
 
     // if api key is required but not found, start setup process
     if (provider.apiKeyRequired) {
       if (apiKey) {
         provider.setApiKey(apiKey);
       } else {
-        throw new Error(
-          `API key for provider ${provider.getName()} is required but not set. Please set it up before using this provider.`,
-        );
+        const userApiKey = await this.setupProviderApiKey(provider.getName());
+        provider.setApiKey(userApiKey);
       }
     }
 
     return provider;
+  }
+
+  async setupProviderApiKey(providerName: string): Promise<string> {
+    // ask user for api key and store it securely
+    const apiKeyAccount = `aic-provider-${providerName}`;
+    const userKey = await input({
+        message: `Enter API key for provider ${providerName}:`,
+        validate(value) {
+            if (value.length === 0) {
+            return "API key cannot be empty";
+            }
+            return true;
+        },
+    })
+    console.log(`Storing API key in device keychain securely...`);
+    await keytar.setPassword(SERVICE_NAME, apiKeyAccount, userKey);
+
+    return userKey;
   }
 }
 
