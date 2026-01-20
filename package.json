@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@google/genai": "^1.28.0",
+    "@inquirer/confirm": "^6.0.4",
     "@inquirer/external-editor": "^2.0.2",
     "@inquirer/input": "^5.0.4",
     "cac": "^6.7.14",
