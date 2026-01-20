@@ -14,7 +14,7 @@ const configSchema = z.object({
 export type Config = z.infer<typeof configSchema>;
 
 class ConfigManager {
-    private config_name: string;
+    private config_path: string;
     private dirty: boolean = false;
     private config: Config = configSchema.parse({
         provider: {
@@ -23,24 +23,25 @@ class ConfigManager {
     });
 
     constructor() {
-        this.config_name = path.join(os.homedir(), `.aicconfig.json`);
+        this.config_path = path.join(os.homedir(), `.aicconfig.json`);
     }
 
     async sync() {
         if (this.dirty) {
             this.dirty = false;
-            await fs.writeFile(this.config_name, JSON.stringify(this.config, null, 2));
+            await fs.writeFile(this.config_path, JSON.stringify(this.config, null, 2));
         }
     }
 
     async load() {
         try {
-            const data = await fs.readFile(this.config_name, 'utf-8');
+            const data = await fs.readFile(this.config_path, 'utf-8');
             const parsed = JSON.parse(data);
             this.config = configSchema.parse(parsed);
         } catch (error) {
             if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-                this.config = configSchema.parse({});
+                // this.config = configSchema.parse({});
+                // ignore missing file error
             } else {
                 throw error;
             }
