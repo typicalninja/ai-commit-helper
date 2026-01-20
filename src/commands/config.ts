@@ -29,6 +29,7 @@ export default async function configHandlerCommand(configKey?: string, configVal
         return;
     }
 
+    const previousValue = config.get(configKey);
     // Both key and value provided: Set (git config user.name "value")
     config.set(configKey, configValue);
     const errors = config.validate();
@@ -38,5 +39,16 @@ export default async function configHandlerCommand(configKey?: string, configVal
     }
 
     await config.sync();
-    console.log(`${colors.cyan(configKey)} ${colors.green('set')}`);
+
+    if(previousValue !== undefined) {
+        if(previousValue === configValue) {
+            console.log(`${colors.cyan(configKey)} is already set to ${colors.italic(configValue)}`);
+            return;
+        }
+        
+        console.log(`${colors.cyan(configKey)} ${colors.yellow('changed from')} ${colors.italic(previousValue)} ${colors.yellow('to')} ${colors.italic(configValue)}`);
+        return;
+    }
+
+    console.log(`${colors.cyan(configKey)} ${colors.green('set')} to ${colors.italic(configValue)}`);
 }
