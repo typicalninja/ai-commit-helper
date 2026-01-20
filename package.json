@@ -10,6 +10,7 @@
   },
   "scripts": {
     "build": "tsdown",
+    "dev": "tsdown --watch",
     "cli": "node ./src/entry.ts"
   },
   "engines": {
