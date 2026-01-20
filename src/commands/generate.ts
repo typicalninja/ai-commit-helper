@@ -6,6 +6,7 @@ import { getStagedDiffs } from "../lib/git";
 import confirm from "@inquirer/confirm";
 import input from "@inquirer/input";
 import { edit } from "@inquirer/external-editor";
+import ora from "ora";
 
 export default async function runGenerateCommand(contextOpt: string[]) {
   const userContext = contextOpt.join(" ");
@@ -30,7 +31,6 @@ export default async function runGenerateCommand(contextOpt: string[]) {
     return;
   }
 
-
   // check if staged diffs exceed token limit
   const stringTokenWarnLimit = provider.stringTokenWarnLimit;
   if (stagedDiffs.length > stringTokenWarnLimit) {
@@ -47,8 +47,15 @@ If possible, consider staging smaller changes for better performance.\n`);
     }
   }
 
+  const spinner = ora("Generating commit message...").start();
+
   // generate commit message
-  let commitMessage = await provider.generateCommitMessage(stagedDiffs, userContext);
+  let commitMessage = await provider.generateCommitMessage(
+    stagedDiffs,
+    userContext,
+  );
+  spinner.stop();
+  spinner.clear();
 
   // menu to show generated commit message and options
   let exitMenu = false;
@@ -62,39 +69,38 @@ If possible, consider staging smaller changes for better performance.\n`);
       invalidInput = false;
     }
 
-    console.log(`> ${commitMessage}`)
+    console.log(`> ${commitMessage}`);
 
     console.log(`\n${bgGray(" COMMANDS ")} [c]ommit / [e]dit / [q]uit\n`);
     const next = await input({
-        message: "Next"
-    })
+      message: "Next",
+    });
 
     switch (next.toLowerCase()) {
-        case "c":
-        case "commit":
-            console.log(dim("Committing changes..."));
-            break;
+      case "c":
+      case "commit":
+        console.log(dim("Committing changes..."));
+        break;
 
-        case "e":
-        case "edit":
-            // open editor to edit commit message
-            const edited = edit(commitMessage);
-            if (edited.trim().length === 0) {
-                console.log(red("Aborting: Commit message cannot be empty."));
-            }
-            else {
-                commitMessage = edited.trim();
-            }
-            break;
+      case "e":
+      case "edit":
+        // open editor to edit commit message
+        const edited = edit(commitMessage);
+        if (edited.trim().length === 0) {
+          console.log(red("Aborting: Commit message cannot be empty."));
+        } else {
+          commitMessage = edited.trim();
+        }
+        break;
 
-        // quit the program
-        case "q":
-        case "quit":
-            exitMenu = true;
-            break;
-        default:
-            invalidInput = true;
-            break;
+      // quit the program
+      case "q":
+      case "quit":
+        exitMenu = true;
+        break;
+      default:
+        invalidInput = true;
+        break;
     }
   }
 }
