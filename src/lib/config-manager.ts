@@ -1,5 +1,7 @@
 import fs from 'node:fs/promises';
 import { z } from 'zod';
+import path from 'node:path';
+import os from 'node:os';
 
 const configSchema = z.object({
     provider: z.object({
@@ -21,7 +23,7 @@ class ConfigManager {
     });
 
     constructor() {
-        this.config_name = `aic.config.json`;
+        this.config_name = path.join(os.homedir(), `.aicconfig.json`);
     }
 
     async sync() {
