@@ -11,7 +11,7 @@ cli
   .action(configHandlerCommand);
 
 cli
-  .command("[context]", "Generate commit message using AI")
+  .command("[...context]", "Generate commit message using AI")
   .option('-d, --debug', 'Disable commit generation and output AI generated reasoning')
   .action(runGenerateCommand);
 
