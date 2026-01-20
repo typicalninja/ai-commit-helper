@@ -5,10 +5,12 @@ export class GeminiProvider extends ModelProvider {
     models = ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-3-flash-preview", "gemini-3-pro-preview"];
 
     selectedModel: string;
+    apiKey?: string;
+    apiKeyRequired = true;
 
-    constructor(model?: string) {
+    constructor() {
         super();
-        this.selectedModel = model || this.models[0];
+        this.selectedModel = this.models[0];
     }
     
     async generateCommitMessage(context: string): Promise<string> {

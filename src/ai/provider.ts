@@ -10,6 +10,8 @@ export abstract class ModelProvider {
   abstract models: string[];
 
   abstract selectedModel: string;
+  abstract apiKey?: string;
+  abstract apiKeyRequired: boolean;
 
   abstract generateCommitMessage(context: string): Promise<string>;
   
@@ -23,6 +25,10 @@ export abstract class ModelProvider {
     } else {
       throw new Error(`Model ${model} is not supported by ${this.getName()}`);
     }
+  }
+
+  setApiKey(key: string) {
+    this.apiKey = key;
   }
 
 }
