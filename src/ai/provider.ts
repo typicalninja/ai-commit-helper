@@ -13,7 +13,14 @@ export abstract class ModelProvider {
   abstract apiKey?: string;
   abstract apiKeyRequired: boolean;
 
-  abstract generateCommitMessage(context: string): Promise<string>;
+  /**
+   * Warning limit for string token length 
+   * Will emit a warning if the input context exceeds this limit
+   * However, it will still attempt to process the input
+   */
+  stringTokenWarnLimit = 5000;
+
+  abstract generateCommitMessage(stagedDiffs: string, userContext?: string): Promise<string>;
   
   getName(): string {
     return this.constructor.name;
