@@ -2,7 +2,7 @@ import { ModelProvider } from "../provider";
 
 export class GeminiProvider extends ModelProvider {
     name = "gemini";
-    models = ["gemini-1.5", "gemini-1.5-pro", "gemini-2", "gemini-2-pro"];
+    models = ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-3-flash-preview", "gemini-3-pro-preview"];
 
     selectedModel: string;
 
