@@ -1,10 +1,9 @@
 import { execa } from "execa";
 
 // Low level git command execution
-export async function executeGit(args: string[], execaOptions?: Record<string, any>): Promise<string> {
-    const options = execaOptions ? execaOptions : {};
-    const result = await execa("git", args, options);
-    return result.stdout.trim();
+export async function executeGit(args: string[], execaOptions?: Record<string, any>) {
+    const result = await execa("git", args, execaOptions);
+    return result;
 }
 
 /**
@@ -21,8 +20,9 @@ export async function isInGitRepository(): Promise<boolean> {
     }
 }
 
-export function getStagedDiffs() {
-    return executeGit(["diff", "--cached"]);
+export async function getStagedDiffs() {
+    const { stdout } = await executeGit(["diff", "--cached"]);
+    return stdout;
 }
 
 export function commitStaged(message: string) {
