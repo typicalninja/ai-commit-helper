@@ -6,30 +6,32 @@
   "license": "MIT",
   "type": "module",
   "bin": {
-    "aic": "./src/index.js"
+    "aic": "./dist/entry.mjs"
   },
   "scripts": {
-    "start": "node ./src/index.js"
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "cli": "node ./src/entry.ts"
   },
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
-    "@clack/prompts": "^0.11.0",
     "@google/genai": "^1.28.0",
+    "@inquirer/confirm": "^6.0.4",
     "@inquirer/external-editor": "^2.0.2",
-    "commander": "^11.0.0",
+    "@inquirer/input": "^5.0.4",
+    "cac": "^6.7.14",
     "execa": "^9.6.0",
-    "lodash.truncate": "^4.4.2",
+    "keytar": "^7.9.0",
     "ora": "^9.0.0",
     "parse-diff": "^0.11.1",
-    "undici": "^6.0.0",
-    "yoctocolors": "^2.1.2"
+    "yoctocolors": "^2.1.2",
+    "zod": "^4.3.5"
   },
   "devDependencies": {
-    "@types/lodash.truncate": "^4.4.9",
     "@types/node": "^25.0.3",
-    "tsx": "^4.21.0",
+    "tsdown": "0.19.0-beta.5",
     "typescript": "^5.9.3"
   }
 }
