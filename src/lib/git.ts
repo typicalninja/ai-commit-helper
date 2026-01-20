@@ -1,8 +1,8 @@
 import { execa } from "execa";
 
 // Low level git command execution
-export async function executeGit(args: string[], repoPath?: string): Promise<string> {
-    const options = repoPath ? { cwd: repoPath } : {};
+export async function executeGit(args: string[], execaOptions?: Record<string, any>): Promise<string> {
+    const options = execaOptions ? execaOptions : {};
     const result = await execa("git", args, options);
     return result.stdout.trim();
 }
@@ -12,9 +12,9 @@ export async function executeGit(args: string[], repoPath?: string): Promise<str
  * @param repoPath 
  * @returns 
  */
-export async function isInGitRepository(repoPath?: string): Promise<boolean> {
+export async function isInGitRepository(): Promise<boolean> {
     try {
-        await executeGit(["rev-parse", "--is-inside-work-tree"], repoPath);
+        await executeGit(["rev-parse", "--is-inside-work-tree"]);
         return true;
     } catch {
         return false;
@@ -26,5 +26,7 @@ export function getStagedDiffs() {
 }
 
 export function commitStaged(message: string) {
-    return executeGit(["commit", "-m", message]);
+    return executeGit(["commit", "-m", message], {
+        stdio: "inherit"
+    });
 }
