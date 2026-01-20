@@ -86,6 +86,7 @@ If possible, consider staging smaller changes for better performance.\n`);
       case "c":
       case "commit":
         await commitStaged(commitMessage);
+        exitMenu = true;
         break;
 
       case "e":
@@ -109,4 +110,6 @@ If possible, consider staging smaller changes for better performance.\n`);
         break;
     }
   }
+
+  console.log("Done.");
 }
