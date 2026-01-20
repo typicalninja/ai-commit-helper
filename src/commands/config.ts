@@ -1,38 +1,42 @@
 import config from "../lib/config.ts";
-import { edit } from "@inquirer/external-editor";
-
+import colors from "yoctocolors";
 
 export default async function configHandlerCommand(configKey?: string, configValue?: string) {
-    // if configKey is not provided, it is guranteed that configValue is also not provided
-    // as it is a positional argument after configKey
-    if(!configKey) {
-        // no arguments provided, show all config
-        if(config.hasKeys()) {
-            console.log("Showing all configuration settings...");
-            edit(config.toStringPretty());
-        }
-        else {
-            console.log("No configuration settings found.");
-        }
-
-        return;
-    } 
-    
-    if(!configValue) {
-        // only key provided, show value
-        const value = config.get(configKey);
-        if(value !== undefined) {
-            console.log(`Configuration for '${configKey}': ${value}`);
-        } else {
-            console.log(`No configuration found for key '${configKey}'.`);
+    // No arguments: List all properties (git config --list)
+    if (!configKey) {
+        if (config.hasKeys()) {
+            console.log(config.toStringPretty());
         }
         return;
     }
 
-    const oldValue = config.get(configKey);
-    // both key and value provided, set config
+    // Only key provided: Get value (git config user.name)
+    if (configValue === undefined) {
+        const value = config.get(configKey);
+        if (value !== undefined) {
+            if (typeof value === 'object' && !Array.isArray(value)) {
+                // If it's a section/object, print its contents in key=value format
+                Object.entries(value).forEach(([k, v]) => {
+                    console.log(`${configKey}.${k}=${v}`);
+                });
+            } else {
+                console.log(value);
+            }
+        }
+        else {
+            console.log(`${colors.red('error:')} key ${colors.cyan(configKey)} not found`);
+        }
+        return;
+    }
+
+    // Both key and value provided: Set (git config user.name "value")
     config.set(configKey, configValue);
+    const errors = config.validate();
+    if (errors) {
+        console.log(`${colors.red('error:')} config has errors \n${errors.map(e => ` - ${e}`).join('\n')}`);
+        return;
+    }
 
     await config.sync();
-    console.log(`Configuration updated: ${configKey} = ${oldValue} -> ${configValue}`);
+    console.log(`${colors.cyan(configKey)} ${colors.green('set')}`);
 }

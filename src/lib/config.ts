@@ -6,7 +6,7 @@ const configSchema = z.object({
         // Name of the model provider to use
         // by default "auto" is used to select the best available provider
         model: z.string().default("auto"),
-    }),
+    }, "Must be a valid object"),
 });
 
 export type Config = z.infer<typeof configSchema>;
@@ -49,7 +49,7 @@ class ConfigManager {
     set(path: string, value: any) {
         const keys = path.split('.');
         let current: any = this.config;
-
+        
         for (let i = 0; i < keys.length - 1; i++) {
             const key = keys[i];
             if (!(key in current) || typeof current[key] !== 'object') {
@@ -60,12 +60,23 @@ class ConfigManager {
 
         current[keys[keys.length - 1]] = value;
 
-        // Re-validate the entire config
-        this.config = configSchema.parse(this.config);
+        // Mark it as dirty for syncing
         this.dirty = true;
     }
 
+    validate(): Array<String> | null {
+        const result = configSchema.safeParse(this.config);
+        if (!result.success) {
+            return result.error.issues.map(i => `${i.path.join('.')}: ${i.message}`);
+        }
+        return null;
+    }
+
     get(path: string): any {
+        if(this.dirty) {
+            throw new Error("Configuration has unsynced changes. Please sync before getting values.");
+        }
+
         const keys = path.split('.');
         let current: any = this.config;
 
