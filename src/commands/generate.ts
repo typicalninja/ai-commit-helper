@@ -31,6 +31,12 @@ export default async function runGenerateCommand(contextOpt: string[]) {
     return;
   }
 
+  // check if there are staged diffs
+    if (stagedDiffs.trim().length === 0) {
+        console.log(`${red("Error:")} No staged changes found. Please stage your changes before generating a commit message.`);
+        return;
+    }
+
   // check if staged diffs exceed token limit
   const stringTokenWarnLimit = provider.stringTokenWarnLimit;
   if (stagedDiffs.length > stringTokenWarnLimit) {
