@@ -22,7 +22,12 @@ export async function isInGitRepository(): Promise<boolean> {
 
 export async function getStagedDiffs() {
     const { stdout } = await executeGit(["diff", "--cached"]);
-    return stdout;
+    // for some reason stdout can be undefined
+    if(!stdout) {
+        return "";
+    }
+
+    return stdout as string;
 }
 
 export function commitStaged(message: string) {
