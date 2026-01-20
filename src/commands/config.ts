@@ -1,4 +1,4 @@
-import config from "../lib/config.ts";
+import config from "../lib/config-manager.ts";
 import colors from "yoctocolors";
 
 export default async function configHandlerCommand(configKey?: string, configValue?: string) {
