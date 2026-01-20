@@ -4,11 +4,23 @@ import colors from "yoctocolors";
 export default async function configHandlerCommand(configKey?: string, configValue?: string) {
     // No arguments: List all properties (git config --list)
     if (!configKey) {
+        console.log(`~${colors.dim(config.getConfigPath())}`)
         if (config.hasKeys()) {
             console.log(config.toStringPretty());
         }
         return;
     }
+
+    // at least config key is provided after this
+    
+    // config key could be "reset" to reset config to default values
+    if (configKey === "reset") {
+        config.reset();
+        await config.sync();
+        console.log(`${colors.green('Configuration has been reset to default values.')}`);
+        return;
+    }
+
 
     // Only key provided: Get value (git config user.name)
     if (configValue === undefined) {

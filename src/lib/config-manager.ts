@@ -13,14 +13,16 @@ const configSchema = z.object({
 
 export type Config = z.infer<typeof configSchema>;
 
+const DEFAULT_CONFIG: Config = {
+    provider: {
+        model: "auto",
+    }
+};
+
 class ConfigManager {
     private config_path: string;
     private dirty: boolean = false;
-    private config: Config = configSchema.parse({
-        provider: {
-            model: "auto",
-        }
-    });
+    private config: Config = configSchema.parse(DEFAULT_CONFIG);
 
     constructor() {
         this.config_path = path.join(os.homedir(), `.aicconfig.json`);
@@ -47,6 +49,11 @@ class ConfigManager {
             }
         }
         return this;
+    }
+
+    reset() {
+        this.config = configSchema.parse(DEFAULT_CONFIG);
+        this.dirty = true;
     }
 
     set(path: string, value: any) {
@@ -115,6 +122,10 @@ class ConfigManager {
             });
         };
         return flatten(this.config).join('\n');
+    }
+
+    getConfigPath(): string {
+        return this.config_path;
     }
 }
 
