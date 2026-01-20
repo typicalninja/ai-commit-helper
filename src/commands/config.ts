@@ -4,7 +4,7 @@ import colors from "yoctocolors";
 export default async function configHandlerCommand(configKey?: string, configValue?: string) {
     // No arguments: List all properties (git config --list)
     if (!configKey) {
-        console.log(`~${colors.dim(config.getConfigPath())}`)
+        console.log(`~${colors.blueBright(config.getConfigPath())}`)
         if (config.hasKeys()) {
             console.log(config.toStringPretty());
         }
@@ -12,7 +12,7 @@ export default async function configHandlerCommand(configKey?: string, configVal
     }
 
     // at least config key is provided after this
-    
+
     // config key could be "reset" to reset config to default values
     if (configKey === "reset") {
         config.reset();
