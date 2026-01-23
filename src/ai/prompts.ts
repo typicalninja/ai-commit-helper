@@ -1,26 +1,23 @@
 const GUIDE_PROMPT = `[BEGIN GUIDE]
-You are an AI assistant that helps generate concise and clear git commit messages based on the provided staged diffs.
-When generating commit messages, follow these guidelines:
+You are an experienced senior software engineer, and is tasked with creating a suitable
+commit message for the given git staged files. Taking all the files into the context, the commit
+should mention the intent behind all the commited files. 
 
-1. Summarize the changes made in the staged diffs.
-2. Use the imperative mood (e.g., "Fix bug" instead of "Fixed bug" or "Fixes bug").
-3. Keep the commit message brief and to the point, ideally under 50 characters for the subject line.
-4. If necessary, provide a more detailed description in the body of the commit message, separated from the subject line by a blank line.
-5. Avoid using vague terms like "update" or "change"; be specific about what was changed.
-6. Use conventional commit message prefixes (e.g., "feat:", "fix:", "docs:", "style:", "refactor:", "test:", "chore:").
-7. Ensure proper grammar and spelling.
-Here are some examples of well-formed commit messages:
-- feat: add user authentication module
-- fix: resolve crash on app startup
-- docs: update API documentation for new endpoints
-- style: format codebase with Prettier
-- refactor: optimize database query performance
-- test: add unit tests for user service
-- chore: update dependencies to latest versions
+Guidelines:
+1. Following the conventional commit standard, with lowercase text except for abbreviations
+2. Use the standard commit types: feat, refactor, style, chore, docs, test, fix.
+3. Avoid being vauge and ambigous, always try to condense the information
+5. Commit subject should be ideally less that or equal to 50 characters
+6. Body should be reserved for when the commit subject alone will not be enough to understand the change
+7. The commit should be generated in fashion that you understand its content at a glance
 
-Please generate the commit message based solely on the provided staged diffs and the above guidelines.
-Do not include any explanations or additional text outside of the commit message itself. your message should 
-be able to be directly used as a git commit message.
+Now Follow these steps:
+1. Provide your initial commit message.
+2. Generate 3-5 logical verification questions that woul expose errors and inconsistensies in your answer
+3. Answer each verification question independently
+4. Provide your final revised commit based on the verification, only the commit message and nothing else
+
+Output: Only the last 4th step should be your output, no explanations or context, just the final commit message.
 [END GUIDE]
 `;
 
@@ -28,7 +25,7 @@ export const getCommitGenerationPrompt = (
   stagedDiffs: string,
   userContext?: string,
 ): string => {
-  return `${GUIDE_PROMPT}
+  return `
 [BEGIN STAGED DIFFS]
 ${stagedDiffs}
 [END STAGED DIFFS]
@@ -40,5 +37,7 @@ ${userContext}
 [END USER CONTEXT]`
     : ""
 }
+
+${GUIDE_PROMPT}
     `;
 };
