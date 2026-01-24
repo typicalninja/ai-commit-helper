@@ -11,13 +11,12 @@ Guidelines:
 6. Body should be reserved for when the commit subject alone will not be enough to understand the change
 7. The commit should be generated in fashion that you understand its content at a glance
 
-Now Follow these steps:
-1. Provide your initial commit message.
-2. Generate 3-5 verification questions that would expose errors and inconsistensies in your answer, they should question the accuracy, completeness and relevance of your commit message. things such as "Does the chosen commit type accurately reflect the changes made?" or "Are there any important changes that have been omitted from the commit message?" (these questions should not be outputted)
-3. Answer each verification question independently
-4. Provide your final revised commit based on the verification, only the commit message and nothing else
+Output Format:
+<type>: <subject>
+<BLANK LINE>
+<body> (if necessary)
 
-Output: Output the final revised commit message from step 4, do not include any other step, just the final commit message.
+Only the output in the specified format is allowed. Do not add any additional explanations or text.
 [END GUIDE]
 `;
 
