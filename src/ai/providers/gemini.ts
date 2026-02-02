@@ -23,17 +23,20 @@ export class GeminiProvider extends ModelProvider {
   }
 
   async generateCommitMessage(stagedDiffs: string, userContext?: string): Promise<string> {
+    const { response } = await this.generateCommitMessageRaw(stagedDiffs, userContext);
+    return response;
+  }
+
+  async generateCommitMessageRaw(stagedDiffs: string, userContext?: string): Promise<{ prompt: string; response: string }> {
     if (!this.client) {
       throw new Error(
         "GeminiProvider: API client not initialized. Call setApiKey() first.",
       );
     }
+    const prompt = getCommitGenerationPrompt(stagedDiffs, userContext);
     const response = await this.client.models.generateContent({
       model: this.selectedModel,
-      contents: getCommitGenerationPrompt(stagedDiffs, userContext),
-      // config: {
-      //   systemInstruction: COMMIT_SYSTEM_PROMPT
-      // }
+      contents: prompt,
       config: {
         temperature: 0,
       },
@@ -43,7 +46,7 @@ export class GeminiProvider extends ModelProvider {
         throw new Error("GeminiProvider: No response text received from API.");
     }
 
-    return response.text.trim();
+    return { prompt, response: response.text.trim() };
   }
 
   setApiKey(key: string) {

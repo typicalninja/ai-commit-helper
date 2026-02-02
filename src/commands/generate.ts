@@ -55,11 +55,12 @@ If possible, consider staging smaller changes for better performance.\n`);
 
   const spinner = ora("Generating commit message...").start();
 
-  // generate commit message
-  let commitMessage = await provider.generateCommitMessage(
+  // generate commit message and capture raw data for debug commands
+  const { prompt: rawPrompt, response: rawResponse } = await provider.generateCommitMessageRaw(
     stagedDiffs,
     userContext,
   );
+  let commitMessage = rawResponse;
   spinner.stop();
   spinner.clear();
 
@@ -105,6 +106,22 @@ If possible, consider staging smaller changes for better performance.\n`);
       case "quit":
         exitMenu = true;
         break;
+
+      // hidden debug commands
+      case "rq":
+        console.clear();
+        console.log(`${bgGray(" RAW REQUEST ")}\n`);
+        console.log(dim(rawPrompt));
+        await input({ message: "Press enter to continue..." });
+        break;
+
+      case "re":
+        console.clear();
+        console.log(`${bgGray(" RAW RESPONSE ")}\n`);
+        console.log(cyan(rawResponse));
+        await input({ message: "Press enter to continue..." });
+        break;
+
       default:
         invalidInput = true;
         break;

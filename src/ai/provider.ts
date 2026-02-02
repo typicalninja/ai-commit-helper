@@ -21,6 +21,7 @@ export abstract class ModelProvider {
   stringTokenWarnLimit = 5000;
 
   abstract generateCommitMessage(stagedDiffs: string, userContext?: string): Promise<string>;
+  abstract generateCommitMessageRaw(stagedDiffs: string, userContext?: string): Promise<{ prompt: string; response: string }>;
   
   getName(): string {
     return this.constructor.name;
