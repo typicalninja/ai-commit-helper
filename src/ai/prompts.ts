@@ -1,12 +1,16 @@
 const GUIDE_PROMPT = `
-You are a commit message generator. Analyze the diffs above and output ONLY a single-line commit message.
+You are a commit message generator. Analyze the diffs below and output a concise, clear, and descriptive git commit message following these rules:
 
-FORMAT: <type>: <description>
+FORMAT: 
+<type>: <short description>
+
+<optional body>
+
 TYPES: feat|fix|docs|style|refactor|perf|test|build|ci|chore
 
 RULES:
 - Imperative mood ("add" not "added/adds")
-- Lowercase except proper nouns/acronyms
+- Lowercase type and short description. references to diffs can maintain case
 - Max 50 chars, be specific
 - No vague terms like "fix bug" or "update code"
 
