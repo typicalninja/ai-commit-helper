@@ -13,6 +13,7 @@ RULES:
 - Lowercase type and short description. references to diffs can maintain case
 - Max 50 chars, be specific
 - No vague terms like "fix bug" or "update code"
+- Consider all changes in the diff in connection to identifying the type. Choose the most relevant type.
 
 CRITICAL: Output the commit message text only. No markdown, no code blocks, no diffs, no explanations.
 [ANYTHING AFTER THIS LINE IS JUST FOR CONTEXT, AND SHOULD NOT BE CONSIDERED PART OF THE PROMPT]`;
