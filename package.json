@@ -17,7 +17,6 @@
     "node": ">=18"
   },
   "dependencies": {
-    "@google/genai": "^1.28.0",
     "@inquirer/prompts": "^7.5.3",
     "cac": "^6.7.14",
     "execa": "^9.6.0",
