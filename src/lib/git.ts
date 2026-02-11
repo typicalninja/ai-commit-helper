@@ -1,37 +1,44 @@
 import { execa } from "execa";
 
-// Low level git command execution
-export async function executeGit(args: string[], execaOptions?: Record<string, any>) {
-    const result = await execa("git", args, execaOptions);
-    return result;
+export async function isGitRepo(): Promise<boolean> {
+  try {
+    await execa("git", ["rev-parse", "--is-inside-work-tree"]);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
-/**
- * Returns true the current directory (or given path) is inside a git repository
- * @param repoPath 
- * @returns 
- */
-export async function isInGitRepository(): Promise<boolean> {
-    try {
-        await executeGit(["rev-parse", "--is-inside-work-tree"]);
-        return true;
-    } catch {
-        return false;
-    }
+export interface StagedFileInfo {
+  path: string;
+  additions: number;
+  deletions: number;
 }
 
-export async function getStagedDiffs() {
-    const { stdout } = await executeGit(["diff", "--cached"]);
-    // for some reason stdout can be undefined
-    if(!stdout) {
-        return "";
-    }
+export async function getStagedFileStats(): Promise<StagedFileInfo[]> {
+  const { stdout } = await execa("git", ["diff", "--cached", "--numstat"]);
+  if (!stdout?.trim()) return [];
 
-    return stdout as string;
-}
-
-export function commitStaged(message: string) {
-    return executeGit(["commit", "-m", message], {
-        stdio: "inherit"
+  return stdout
+    .trim()
+    .split("\n")
+    .map((line) => {
+      const [add, del, ...pathParts] = line.split("\t");
+      return {
+        path: pathParts.join("\t"),
+        additions: add === "-" ? 0 : Number.parseInt(add, 10),
+        deletions: del === "-" ? 0 : Number.parseInt(del, 10),
+      };
     });
+}
+
+export async function getStagedDiff(files?: string[]): Promise<string> {
+  const args = ["diff", "--cached"];
+  if (files?.length) args.push("--", ...files);
+  const { stdout } = await execa("git", args);
+  return stdout ?? "";
+}
+
+export async function commit(message: string): Promise<void> {
+  await execa("git", ["commit", "-m", message], { stdio: "inherit" });
 }
