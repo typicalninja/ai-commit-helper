@@ -1,66 +1,51 @@
-import config from "../lib/config-manager.ts";
-import colors from "yoctocolors";
+import {
+  loadConfig,
+  saveConfig,
+  getConfigValue,
+  setConfigValue,
+  flattenConfig,
+  resetConfig,
+  getConfigPath,
+} from "../lib/config.ts";
+import { error } from "../ui/format.ts";
+import { cyan, dim, green } from "yoctocolors";
 
-export default async function configHandlerCommand(configKey?: string, configValue?: string) {
-    // No arguments: List all properties (git config --list)
-    if (!configKey) {
-        console.log(`~${colors.blueBright(config.getConfigPath())}`)
-        if (config.hasKeys()) {
-            console.log(config.toStringPretty());
-        }
-        return;
+export async function configCommand(key?: string, value?: string) {
+  const config = await loadConfig();
+
+  if (!key) {
+    console.log(dim(getConfigPath()) + "\n");
+    for (const line of flattenConfig(config)) {
+      console.log(line);
     }
+    return;
+  }
 
-    // at least config key is provided after this
+  if (key === "reset") {
+    await saveConfig(resetConfig());
+    console.log(green("config reset to defaults"));
+    return;
+  }
 
-    // config key could be "reset" to reset config to default values
-    if (configKey === "reset") {
-        config.reset();
-        await config.sync();
-        console.log(`${colors.green('Configuration has been reset to default values.')}`);
-        return;
+  if (value === undefined) {
+    const val = getConfigValue(config, key);
+    if (val === undefined) {
+      console.error(error(`key ${cyan(key)} not found`));
+      process.exitCode = 1;
+      return;
     }
+    console.log(
+      typeof val === "object" ? JSON.stringify(val, null, 2) : String(val),
+    );
+    return;
+  }
 
-
-    // Only key provided: Get value (git config user.name)
-    if (configValue === undefined) {
-        const value = config.get(configKey);
-        if (value !== undefined) {
-            if (typeof value === 'object' && !Array.isArray(value)) {
-                // If it's a section/object, print its contents in key=value format
-                Object.entries(value).forEach(([k, v]) => {
-                    console.log(`${configKey}.${k}=${v}`);
-                });
-            } else {
-                console.log(value);
-            }
-        }
-        else {
-            console.log(`${colors.red('error:')} key ${colors.cyan(configKey)} not found`);
-        }
-        return;
-    }
-
-    const previousValue = config.get(configKey);
-    // Both key and value provided: Set (git config user.name "value")
-    config.set(configKey, configValue);
-    const errors = config.validate();
-    if (errors) {
-        console.log(`${colors.red('error:')} config has errors \n${errors.map(e => ` - ${e}`).join('\n')}`);
-        return;
-    }
-
-    await config.sync();
-
-    if(previousValue !== undefined) {
-        if(previousValue === configValue) {
-            console.log(`${colors.cyan(configKey)} is already set to ${colors.italic(configValue)}`);
-            return;
-        }
-        
-        console.log(`${colors.cyan(configKey)} ${colors.yellow('changed from')} ${colors.italic(previousValue)} ${colors.yellow('to')} ${colors.italic(configValue)}`);
-        return;
-    }
-
-    console.log(`${colors.cyan(configKey)} ${colors.green('set')} to ${colors.italic(configValue)}`);
+  try {
+    const updated = setConfigValue(config, key, value);
+    await saveConfig(updated);
+    console.log(`${cyan(key)} ${green("->")} ${value}`);
+  } catch (err) {
+    console.error(error((err as Error).message));
+    process.exitCode = 1;
+  }
 }
