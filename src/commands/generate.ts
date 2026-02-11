@@ -1,132 +1,165 @@
-import configManager from "../lib/config-manager";
-import { commitStaged, isInGitRepository } from "../lib/git";
-import { providerManager } from "../lib/provider-manager";
-import { bgGray, cyan, dim, red, yellow } from "yoctocolors";
-import { getStagedDiffs } from "../lib/git";
-import confirm from "@inquirer/confirm";
-import input from "@inquirer/input";
-import { edit } from "@inquirer/external-editor";
+import readline from "node:readline";
+import { loadConfig } from "../lib/config.ts";
+import {
+  isGitRepo,
+  getStagedFileStats,
+  getStagedDiff,
+  commit,
+} from "../lib/git.ts";
+import { generate } from "../providers/resolver.ts";
+import { ProviderError } from "../providers/types.ts";
+import { selectFiles } from "../ui/files.ts";
+import { commitBox, error, warn } from "../ui/format.ts";
+import { editor } from "@inquirer/prompts";
 import ora from "ora";
+import { dim, bold } from "yoctocolors";
 
-export default async function runGenerateCommand(contextOpt: string[]) {
-  const userContext = contextOpt.join(" ");
-  const isGitRepo = await isInGitRepository();
-
-  if (!isGitRepo) {
-    console.log(
-      `${red("error:")} Current directory is not a git repository. Please run this command inside a git repository.`,
-    );
-    return;
-  }
-
-  const stagedDiffs = await getStagedDiffs();
-
-  const model = configManager.get("provider.model");
-  const provider = await providerManager.getPreparedProvider(model);
-
-  if (!provider) {
-    console.log(
-      `${red("error:")} No provider found for model ${cyan(model)}. Please check your configuration. [key: provider.model]`,
-    );
-    return;
-  }
-
-  // check if there are staged diffs
-    if (stagedDiffs.trim().length === 0) {
-        console.log(`${red("Error:")} No staged changes found. Please stage your changes before generating a commit message.`);
-        return;
-    }
-
-  // check if staged diffs exceed token limit
-  const stringTokenWarnLimit = provider.stringTokenWarnLimit;
-  if (stagedDiffs.length > stringTokenWarnLimit) {
-    console.log(`${yellow("Warning:")} The staged diff size exceeds the recommended limit of ${stringTokenWarnLimit} characters. [staged diff size: ${stagedDiffs.length} characters]
-Expect potential lower quality commit messages or failures.
-If possible, consider staging smaller changes for better performance.\n`);
-    const proceed = await confirm({
-      message: "Do you want to proceed anyway?",
-      default: false,
+function ask(prompt: string): Promise<string> {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+  return new Promise((resolve) => {
+    rl.question(prompt, (answer) => {
+      rl.close();
+      resolve(answer.trim().toLowerCase());
     });
-    if (!proceed) {
-      console.log("Aborting commit message generation.");
-      return;
-    }
-  }
+  });
+}
 
-  const spinner = ora("Generating commit message...").start();
-
-  // generate commit message and capture raw data for debug commands
-  const { prompt: rawPrompt, response: rawResponse } = await provider.generateCommitMessageRaw(
-    stagedDiffs,
-    userContext,
+function truncateDiff(diff: string, maxLines: number): string {
+  const lines = diff.split("\n");
+  if (lines.length <= maxLines) return diff;
+  return (
+    lines.slice(0, maxLines).join("\n") +
+    `\n[truncated: ${lines.length - maxLines} lines omitted]`
   );
-  let commitMessage = rawResponse;
-  spinner.stop();
-  spinner.clear();
+}
 
-  // menu to show generated commit message and options
-  let exitMenu = false;
-  let invalidInput = false;
+export default async function runGenerateCommand(context: string[]) {
+  try {
+    await run(context);
+  } catch (err) {
+    if ((err as Error).name === "ExitPromptError") return;
+    console.error(error((err as Error).message));
+    process.exitCode = 1;
+  }
+}
 
-  while (!exitMenu) {
-    console.clear();
+async function run(context: string[]) {
+  const userContext = context.join(" ") || undefined;
 
-    if (invalidInput) {
-      console.log(`${red("Invalid input. Please try again.")}\n`);
-      invalidInput = false;
-    }
+  if (!(await isGitRepo())) {
+    console.error(error("not a git repository"));
+    process.exitCode = 1;
+    return;
+  }
 
-    console.log(`> ${commitMessage}`);
+  const config = await loadConfig();
+  const files = await getStagedFileStats();
 
-    console.log(`\n${bgGray(" COMMANDS ")} [c]ommit / [e]dit / [q]uit\n`);
-    const next = await input({
-      message: "Next",
-    });
+  if (files.length === 0) {
+    console.error(
+      error("no staged changes. Stage files with: git add <files>"),
+    );
+    process.exitCode = 1;
+    return;
+  }
 
-    switch (next.toLowerCase()) {
+  const selectedFiles = await selectFiles(files, config.ignore);
+
+  if (selectedFiles.length === 0) {
+    console.error(error("no files selected"));
+    process.exitCode = 1;
+    return;
+  }
+
+  let diff = await getStagedDiff(selectedFiles);
+  diff = truncateDiff(diff, config.maxDiffLines);
+
+  if (!diff.trim()) {
+    console.error(error("staged diff is empty"));
+    process.exitCode = 1;
+    return;
+  }
+
+  const diffLines = diff.split("\n").length;
+  console.log(
+    dim(
+      `\n${selectedFiles.length} file(s), ~${diffLines} diff lines -> ${config.provider}/${config.model}\n`,
+    ),
+  );
+
+  let commitMessage = await generateMessage(config, diff, userContext);
+  if (!commitMessage) return;
+
+  let done = false;
+  while (!done) {
+    console.log(commitBox(commitMessage));
+
+    const action = await ask(
+      `${dim("[c]ommit  [e]dit  [r]egenerate  [q]uit")} ${bold("?")} `,
+    );
+
+    switch (action) {
       case "c":
       case "commit":
-        await commitStaged(commitMessage);
-        exitMenu = true;
+        await commit(commitMessage);
+        done = true;
         break;
 
       case "e":
-      case "edit":
-        // open editor to edit commit message
-        const edited = edit(commitMessage);
-        if (edited.trim().length === 0) {
-          console.log(red("Aborting: Commit message cannot be empty."));
-        } else {
-          commitMessage = edited.trim();
-        }
+      case "edit": {
+        const edited = await editor({
+          message: "Edit commit message",
+          default: commitMessage,
+        });
+        if (edited.trim()) commitMessage = edited.trim();
         break;
+      }
 
-      // quit the program
+      case "r":
+      case "regenerate": {
+        const msg = await generateMessage(config, diff, userContext);
+        if (msg) commitMessage = msg;
+        break;
+      }
+
       case "q":
       case "quit":
-        exitMenu = true;
-        break;
-
-      // hidden debug commands
-      case "rq":
-        console.clear();
-        console.log(`${bgGray(" RAW REQUEST ")}\n`);
-        console.log(dim(rawPrompt));
-        await input({ message: "Press enter to continue..." });
-        break;
-
-      case "re":
-        console.clear();
-        console.log(`${bgGray(" RAW RESPONSE ")}\n`);
-        console.log(cyan(rawResponse));
-        await input({ message: "Press enter to continue..." });
+        done = true;
         break;
 
       default:
-        invalidInput = true;
         break;
     }
   }
+}
 
-  console.log("Done.");
+async function generateMessage(
+  config: Parameters<typeof generate>[0],
+  diff: string,
+  context?: string,
+): Promise<string | null> {
+  const spinner = ora("generating...").start();
+
+  try {
+    const result = await generate(config, diff, context);
+    spinner.succeed("done");
+    return result.message;
+  } catch (err) {
+    spinner.fail("failed");
+    if (err instanceof ProviderError) {
+      console.error(error(err.message));
+      if (err.status === 429) {
+        console.error(
+          warn("rate limited. Add more keys with: aic add-key <provider> <key>"),
+        );
+      }
+    } else {
+      console.error(error((err as Error).message));
+    }
+    process.exitCode = 1;
+    return null;
+  }
 }
