@@ -1,7 +1,7 @@
 {
   "name": "aic",
   "version": "0.1.0",
-  "description": "A small commit-message helper CLI using Google Gemini (configurable model).",
+  "description": "AI-powered git commit message generator with multi-provider support and key rotation.",
   "author": "",
   "license": "MIT",
   "type": "module",
@@ -18,14 +18,10 @@
   },
   "dependencies": {
     "@google/genai": "^1.28.0",
-    "@inquirer/confirm": "^6.0.4",
-    "@inquirer/external-editor": "^2.0.2",
-    "@inquirer/input": "^5.0.4",
+    "@inquirer/prompts": "^7.5.3",
     "cac": "^6.7.14",
     "execa": "^9.6.0",
-    "keytar": "^7.9.0",
     "ora": "^9.0.0",
-    "parse-diff": "^0.11.1",
     "yoctocolors": "^2.1.2",
     "zod": "^4.3.5"
   },
