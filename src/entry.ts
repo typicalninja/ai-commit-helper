@@ -1,35 +1,42 @@
 #! /usr/bin/env node
 import cac from "cac";
-import pkgJson from "../package.json" with { type: "json" };  
+import pkgJson from "../package.json" with { type: "json" };
 import runGenerateCommand from "./commands/generate.ts";
-import configHandlerCommand from "./commands/config.ts";
-import setKeyCommand from "./commands/set-key.ts";
+import { configCommand } from "./commands/config.ts";
+import {
+  addKeyCommand,
+  removeKeyCommand,
+  listKeysCommand,
+} from "./commands/keys.ts";
 
-const cli = cac("ai-commit-helper");
-
-cli
-  .command("config [config-key] [config-value]", "Manage configuration settings")
-  .action(configHandlerCommand);
-
-cli
-  .command("set-key", "Set API key for the active AI provider")
-  .action(setKeyCommand);
+const cli = cac("aic");
 
 cli
-  .command("[...context]", "Generate commit message using AI")
+  .command("config [key] [value]", "View or set configuration")
+  .action(configCommand);
+
+cli
+  .command("add-key [provider] [key]", "Add an API key for a provider")
+  .action(addKeyCommand);
+
+cli
+  .command("remove-key [provider]", "Remove an API key from a provider")
+  .action(removeKeyCommand);
+
+cli.command("list-keys", "List configured API keys").action(listKeysCommand);
+
+cli
+  .command("[...context]", "Generate a commit message")
   .action(runGenerateCommand);
 
-// parse at the end
 cli.help();
 cli.version(pkgJson.version);
 
 try {
   cli.parse();
-}
-catch (error) {
-  if(error instanceof Error) {
-    console.error("error:", error.message);
+} catch (err) {
+  if (err instanceof Error) {
+    console.error(`error: ${err.message}`);
   }
-
   process.exitCode = 1;
 }
