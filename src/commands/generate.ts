@@ -104,8 +104,13 @@ async function run(context: string[]) {
     switch (action) {
       case "c":
       case "commit":
-        await commit(commitMessage);
-        done = true;
+        try {
+          await commit(commitMessage);
+          done = true;
+        } catch (err) {
+          console.error(error(`commit failed: ${(err as Error).message}`));
+          console.log(warn("fix the issue and try again"));
+        }
         break;
 
       case "e":
