@@ -39,6 +39,26 @@ export async function getStagedDiff(files?: string[]): Promise<string> {
   return stdout ?? "";
 }
 
+export async function getFileSummaries(
+  files: string[],
+  stats: StagedFileInfo[],
+): Promise<string> {
+  if (files.length === 0) return "";
+
+  const summaries = files.map((file) => {
+    const stat = stats.find((s) => s.path === file);
+    if (!stat) return `${file}: no changes`;
+
+    const isBinary = stat.additions === 0 && stat.deletions === 0;
+    if (isBinary) {
+      return `${file}: binary file changed`;
+    }
+    return `${file}: +${stat.additions} -${stat.deletions}`;
+  });
+
+  return summaries.join("\n");
+}
+
 export async function commit(message: string): Promise<void> {
   await execa("git", ["commit", "-m", message], { stdio: "inherit" });
 }

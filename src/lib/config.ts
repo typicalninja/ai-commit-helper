@@ -13,11 +13,6 @@ const configSchema = z.object({
   ignore: z
     .array(z.string())
     .default([
-      // Lock files
-      "*.lock",
-      "*-lock.{json,yaml,yml}",
-      "*.lockb",
-      
       // Dependencies
       "**/node_modules/**",
       "**/vendor/**",
@@ -31,14 +26,6 @@ const configSchema = z.object({
       "**/.nuxt/**",
       "**/.output/**",
       "**/.vercel/**",
-      
-      // Generated files
-      "**/*.min.{js,css}",
-      "**/*.bundle.{js,css}",
-      "**/*.generated.*",
-      "**/*-generated.*",
-      "**/*.gen.*",
-      "**/*-gen.*",
       
       // Binary and compiled files
       "**/*.{pyc,pyo,class,o,obj,exe,dll,so,dylib}",
@@ -74,6 +61,22 @@ const configSchema = z.object({
       "**/*.{jpg,jpeg,png,gif,bmp,ico,webp,svg}",
       "**/*.{mp3,mp4,avi,mov,wmv,flv}",
       "**/*.{pdf,doc,docx,xls,xlsx,ppt,pptx}",
+    ]),
+  summarize: z
+    .array(z.string())
+    .default([
+      // Lock files - show changes but not full content
+      "*.lock",
+      "*-lock.{json,yaml,yml}",
+      "*.lockb",
+      
+      // Large generated files
+      "**/*.min.{js,css}",
+      "**/*.bundle.{js,css}",
+      "**/*.generated.*",
+      "**/*-generated.*",
+      "**/*.gen.*",
+      "**/*-gen.*",
     ]),
   maxDiffLines: z.number().default(500),
   providers: z.record(z.string(), providerConfigSchema).default({}),

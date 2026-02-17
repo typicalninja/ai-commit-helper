@@ -4,11 +4,12 @@ import {
   isGitRepo,
   getStagedFileStats,
   getStagedDiff,
+  getFileSummaries,
   commit,
 } from "../lib/git.ts";
 import { generate } from "../providers/resolver.ts";
 import { ProviderError } from "../providers/types.ts";
-import { selectFiles } from "../ui/files.ts";
+import { selectFiles, type FileSelection } from "../ui/files.ts";
 import { commitBox, error, warn } from "../ui/format.ts";
 import { editor } from "@inquirer/prompts";
 import ora from "ora";
@@ -66,15 +67,31 @@ async function run(context: string[]) {
     return;
   }
 
-  const selectedFiles = await selectFiles(files, config.ignore);
+  const selectedFiles = await selectFiles(files, config.ignore, config.summarize);
 
-  if (selectedFiles.length === 0) {
+  const totalSelected = selectedFiles.full.length + selectedFiles.summarized.length;
+  if (totalSelected === 0) {
     console.error(error("no files selected"));
     process.exitCode = 1;
     return;
   }
 
-  let diff = await getStagedDiff(selectedFiles);
+  // Build combined diff: full diffs + summarized files
+  let diff = "";
+  
+  if (selectedFiles.full.length > 0) {
+    const fullDiff = await getStagedDiff(selectedFiles.full);
+    diff += fullDiff;
+  }
+  
+  if (selectedFiles.summarized.length > 0) {
+    const summaries = await getFileSummaries(selectedFiles.summarized, files);
+    if (summaries) {
+      if (diff) diff += "\n\n";
+      diff += "# Summarized files (changes only):\n" + summaries;
+    }
+  }
+  
   diff = truncateDiff(diff, config.maxDiffLines);
 
   if (!diff.trim()) {
@@ -84,9 +101,12 @@ async function run(context: string[]) {
   }
 
   const diffLines = diff.split("\n").length;
+  const fileInfo = selectedFiles.summarized.length > 0
+    ? `${selectedFiles.full.length} full + ${selectedFiles.summarized.length} summarized`
+    : `${selectedFiles.full.length} file(s)`;
   console.log(
     dim(
-      `\n${selectedFiles.length} file(s), ~${diffLines} diff lines -> ${config.provider}/${config.model}\n`,
+      `\n${fileInfo}, ~${diffLines} diff lines -> ${config.provider}/${config.model}\n`,
     ),
   );
 
