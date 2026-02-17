@@ -1,14 +1,12 @@
 import path from "node:path";
 import { checkbox } from "@inquirer/prompts";
+import { minimatch } from "minimatch";
 import type { StagedFileInfo } from "../lib/git.ts";
 import { dim, green, red } from "yoctocolors";
 
 export function isIgnored(filePath: string, patterns: string[]): boolean {
-  const name = path.basename(filePath);
   return patterns.some((pattern) => {
-    if (pattern.startsWith("*.")) return name.endsWith(pattern.slice(1));
-    if (pattern.includes("/")) return filePath.includes(pattern);
-    return name === pattern;
+    return minimatch(filePath, pattern, { matchBase: true });
   });
 }
 
