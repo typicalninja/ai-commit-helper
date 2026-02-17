@@ -13,12 +13,67 @@ const configSchema = z.object({
   ignore: z
     .array(z.string())
     .default([
+      // Lock files
       "*.lock",
-      "pnpm-lock.yaml",
-      "package-lock.json",
-      "yarn.lock",
-      "bun.lock",
-      "bun.lockb",
+      "*-lock.{json,yaml,yml}",
+      "*.lockb",
+      
+      // Dependencies
+      "**/node_modules/**",
+      "**/vendor/**",
+      "**/.pnp.*",
+      
+      // Build outputs
+      "**/dist/**",
+      "**/build/**",
+      "**/out/**",
+      "**/.next/**",
+      "**/.nuxt/**",
+      "**/.output/**",
+      "**/.vercel/**",
+      
+      // Generated files
+      "**/*.min.{js,css}",
+      "**/*.bundle.{js,css}",
+      "**/*.generated.*",
+      "**/*-generated.*",
+      "**/*.gen.*",
+      "**/*-gen.*",
+      
+      // Binary and compiled files
+      "**/*.{pyc,pyo,class,o,obj,exe,dll,so,dylib}",
+      "**/__pycache__/**",
+      "**/*.egg-info/**",
+      
+      // Coverage and test reports
+      "**/coverage/**",
+      "**/.coverage",
+      "**/.nyc_output/**",
+      "**/htmlcov/**",
+      
+      // Logs
+      "**/*.log",
+      "**/logs/**",
+      "**/*.log.*",
+      
+      // IDE and editor files
+      "**/.vscode/**",
+      "**/.idea/**",
+      "**/*.swp",
+      "**/*.swo",
+      "**/*~",
+      
+      // OS files
+      "**/.DS_Store",
+      "**/Thumbs.db",
+      "**/desktop.ini",
+      
+      // Large data files
+      "**/*.{csv,tsv,parquet,avro}",
+      "**/*.{zip,tar,gz,rar,7z}",
+      "**/*.{jpg,jpeg,png,gif,bmp,ico,webp,svg}",
+      "**/*.{mp3,mp4,avi,mov,wmv,flv}",
+      "**/*.{pdf,doc,docx,xls,xlsx,ppt,pptx}",
     ]),
   maxDiffLines: z.number().default(500),
   providers: z.record(z.string(), providerConfigSchema).default({}),
