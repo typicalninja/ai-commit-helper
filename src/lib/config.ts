@@ -25,6 +25,8 @@ export async function loadConfig(): Promise<Config> {
 }
 
 export async function saveConfig(config: Config): Promise<void> {
+  configSchema.parse(config);
+
   await fs.mkdir(CONFIG_DIR, { recursive: true });
   await fs.writeFile(CONFIG_PATH, JSON.stringify(config, null, 2) + "\n");
 }
