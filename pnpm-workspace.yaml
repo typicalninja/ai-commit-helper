@@ -1,2 +1,4 @@
+allowBuilds:
+  keytar: true
 onlyBuiltDependencies:
   - keytar
