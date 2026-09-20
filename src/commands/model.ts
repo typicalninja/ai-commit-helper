@@ -21,10 +21,11 @@ export default defineCommand({
     const currentModel = config.model;
 
     if (!identifier) return console.log(`generation model is ${blueBright(currentModel)}`);
-    if(identifier === currentModel) return console.log(`generation model is already set to ${blueBright(currentModel)}`)
+    if (identifier === currentModel)
+      return console.log(`generation model is already set to ${blueBright(currentModel)}`);
 
     config.model = identifier;
     await saveConfig(config);
-    console.log(`updated generation model to ${greenBright(identifier)}`)
+    console.log(`updated generation model to ${greenBright(identifier)}`);
   },
 });
