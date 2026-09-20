@@ -1,6 +1,6 @@
 allowBuilds:
   keytar: true
 minimumReleaseAgeExclude:
-  - yalp-js@1.0.1
+  - yalp-js@1.0.1 || 1.1.0
 onlyBuiltDependencies:
   - keytar
