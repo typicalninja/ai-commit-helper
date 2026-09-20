@@ -23,4 +23,11 @@ async function getKeysFromKeyChain() {
   return await keytar.findCredentials(SERVICE_NAME);
 }
 
-export default { addToKeyChain, getKeysFromKeyChain };
+/**
+ * Remove the specified account/API key from the keychain.
+ */
+async function deleteKeyFromKeyChain(accountName: string): Promise<boolean> {
+  return await keytar.deletePassword(SERVICE_NAME, accountName);
+}
+
+export default { addToKeyChain, getKeysFromKeyChain, deleteKeyFromKeyChain };
