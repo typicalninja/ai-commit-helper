@@ -10,6 +10,6 @@ export default defineCommand({
     const { key } = positionals;
     const savedName = await keystore.addToKeyChain(key);
 
-    console.log(`API key saved as ${greenBright(savedName)}`)
+    console.log(`API key saved as ${greenBright(savedName)}`);
   },
 });
