@@ -1,5 +1,5 @@
 import { defineCommand } from "yalp-js";
-import { loadConfig, saveConfig } from "../lib/config";
+import { loadConfig, saveConfig } from "../lib/config.js";
 
 const modelChoices = [
   "gemini-2.5-flash-lite",
