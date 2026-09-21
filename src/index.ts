@@ -7,7 +7,7 @@ const aic = defineCommand({
   name: "aic",
   commands: commands,
   positionals: {
-    context: {},
+    context: { description: "why you made the change, passed to the model" },
   },
   action: ({ positionals }) => generateCommandAction(positionals.context),
 });
