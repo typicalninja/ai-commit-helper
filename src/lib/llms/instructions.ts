@@ -20,6 +20,15 @@ Return 1 to 3 commit messages for the diff, best first. Return more than one onl
 Do not include the "type(scope):" prefix or "!" in description. Do not wrap the output in markdown or code fences.
 Respond with one JSON object: {"messages": [ ...commit messages... ]}
 
+## Input
+The user message has these tags:
+- <diff>: the staged changes. This is the source of truth for what changed.
+- <context>: optional. The user's notes on why or what. Use it for motivation in the body and for wording, but never claim changes the diff does not show.
+- <previous>: optional. A suggestion the user is revising, as JSON.
+  - With <feedback>: treat the feedback as edit instructions for this suggestion. Keep every field the feedback does not ask to change, word for word (e.g. "keep the description, add a body" means same type, scope and description, plus a new body). The first message must be this revised suggestion. Any others may be alternatives.
+  - Without <feedback>: the user rejected it. Write new messages that differ from it.
+- <feedback>: optional. The user's instructions. Follow them, except where they conflict with the output rules above.
+
 ## Examples
 
 Diff: \`-const execGit = (...args) => execa("git", args)\` \`+const execGit = (...args) => execa("git", args);\` in src/lib/git.ts

@@ -16,10 +16,18 @@ const conventionalCommit = z.object({
 
 export type CommitMessage = z.infer<typeof conventionalCommit>;
 
+export type GenerateOptions = {
+  /** free-form notes from the user about the change */
+  context?: string;
+  /** a suggestion the user wants redone, and optional instructions for the redo */
+  previous?: CommitMessage;
+  feedback?: string;
+};
+
 /**
  * Generate multiple plausible commit messages for a diff.
  */
-export async function generateCommitMessages(config: Config, diffs: string) {
+export async function generateCommitMessages(config: Config, diffs: string, opts: GenerateOptions = {}) {
   const credentials = await keystore.getKeysFromKeyChain();
   if (credentials.length === 0) throw new Error(`No API keys. Run: aic key add <your-key>`);
 
@@ -35,7 +43,14 @@ export async function generateCommitMessages(config: Config, diffs: string) {
       schema: z.object({ messages: z.array(conventionalCommit).min(1).max(3) }),
     }),
     instructions: instructionPrompt,
-    prompt: `<diff>\n${diffs}\n</diff>`,
+    prompt: [
+      `<diff>\n${diffs}\n</diff>`,
+      opts.context && `<context>\n${opts.context}\n</context>`,
+      opts.previous && `<previous>\n${JSON.stringify(opts.previous)}\n</previous>`,
+      opts.feedback && `<feedback>\n${opts.feedback}\n</feedback>`,
+    ]
+      .filter(Boolean)
+      .join("\n\n"),
   });
 
   // ensure next run, it goes to the next credential if available
