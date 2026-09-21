@@ -12,20 +12,29 @@ export type Config = z.infer<typeof configSchema>;
 const CONFIG_DIR = path.join(os.homedir(), ".config", "aic");
 const CONFIG_PATH = path.join(CONFIG_DIR, "config.json");
 
+let configCache: Config | null = null;
+
 export async function loadConfig(): Promise<Config> {
+  if (configCache) return Promise.resolve(configCache);
+
   try {
     const data = await fs.readFile(CONFIG_PATH, "utf-8");
-    return configSchema.parse(JSON.parse(data));
+    configCache = configSchema.parse(JSON.parse(data));
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-      return configSchema.parse({});
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+      throw error;
     }
-    throw error;
+
+    configCache = configSchema.parse({});
   }
+
+  return configCache;
 }
 
 export async function saveConfig(config: Config): Promise<void> {
   configSchema.parse(config);
+  // update the cache
+  configCache = config;
 
   await fs.mkdir(CONFIG_DIR, { recursive: true });
   await fs.writeFile(CONFIG_PATH, JSON.stringify(config, null, 2) + "\n");
