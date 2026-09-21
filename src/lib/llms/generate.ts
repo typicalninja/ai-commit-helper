@@ -22,6 +22,7 @@ export type GenerateOptions = {
   /** a suggestion the user wants redone, and optional instructions for the redo */
   previous?: CommitMessage;
   feedback?: string;
+  signal?: AbortSignal;
 };
 
 /**
@@ -54,6 +55,7 @@ export async function generateCommitMessages(config: Config, diffs: string, opts
         }),
         instructions: instructionPrompt,
         prompt,
+        abortSignal: opts.signal,
         // backing off on a rate limited key defeats switching to the next one
         maxRetries: credentials.length > 1 ? 0 : 2,
       });
