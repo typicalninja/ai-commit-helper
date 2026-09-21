@@ -14,11 +14,11 @@ const conventionalCommit = z.object({
   footer: z.string().optional(),
 });
 
+export type CommitMessage = z.infer<typeof conventionalCommit>;
+
 /**
  * Generate multiple plausible commit messages for a diff.
  */
-export type CommitMessage = z.infer<typeof conventionalCommit>;
-
 export async function generateCommitMessages(config: Config, diffs: string) {
   const credentials = await keystore.getKeysFromKeyChain();
   if (credentials.length === 0) throw new Error(`No API keys. Run: aic key add <your-key>`);
@@ -40,7 +40,7 @@ export async function generateCommitMessages(config: Config, diffs: string) {
 
   // ensure next run, it goes to the next credential if available
   config.lastUsedKeyIndex = keyIndex;
-  saveConfig(config)
+  await saveConfig(config);
 
   return output.messages;
 }
