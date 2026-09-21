@@ -1,4 +1,4 @@
-import { Prompt } from "@clack/core";
+import { Prompt, TextPrompt } from "@clack/core";
 import color from "yoctocolors";
 import type { CommitMessage } from "../llms/generate";
 
@@ -40,7 +40,12 @@ export function pickCommit(messages: CommitMessage[]) {
     {
       render() {
         const m = messages[index];
-        if (this.state === "submit") return `${color.green("✔")}  ${formatCommit(m).split("\n")[0]}`;
+        if (this.state === "submit") {
+          const head = formatCommit(m).split("\n")[0];
+          if (this.value?.action === "regenerate") return color.dim(`↻  ${head}`);
+          if (this.value?.action === "edit") return `${color.cyan("✎")}  ${head}`;
+          return `${color.green("✔")}  ${head}`;
+        }
         if (this.state === "cancel") return `${color.red("■")}  cancelled`;
 
         const width = Math.min((process.stdout.columns || 80) - 4, 72);
@@ -67,4 +72,21 @@ export function pickCommit(messages: CommitMessage[]) {
   });
 
   return prompt.prompt();
+}
+
+/** Optional instructions for a regenerate. Returns "" to skip, CANCEL symbol on esc (go back). */
+export function askFeedback() {
+  return new TextPrompt({
+    render() {
+      if (this.state === "submit") return `${color.cyan("↻")}  regenerating${this.userInput ? `: ${this.userInput}` : ""}`;
+      if (this.state === "cancel") return `${color.gray("■")}  back`;
+      const input = this.userInput
+        ? this.userInputWithCursor
+        : `${color.inverse(" ")}${color.dim("e.g. keep the description, add a body")}`;
+      return [
+        `${color.cyan("◆")}  regenerate instructions ${color.dim("(optional · enter to skip · esc to go back)")}`,
+        `${color.gray("│")}  ${input}`,
+      ].join("\n");
+    },
+  }).prompt();
 }
