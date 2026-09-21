@@ -25,6 +25,7 @@ export async function loadConfig(): Promise<Config> {
       throw error;
     }
 
+    // parse on empty object, give us the default values
     configCache = configSchema.parse({});
   }
 
