@@ -5,6 +5,7 @@ import { z } from "zod";
 
 const configSchema = z.object({
   model: z.string().default("gemini-2.5-flash-lite"),
+  lastUsedKeyIndex: z.int().default(0)
 });
 
 export type Config = z.infer<typeof configSchema>;
