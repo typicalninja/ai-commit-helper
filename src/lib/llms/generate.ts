@@ -1,4 +1,4 @@
-import { Config } from "../config";
+import { Config, saveConfig } from "../config";
 import keystore from "../keystore";
 import { generateText, Output } from "ai";
 import { createGoogle } from "@ai-sdk/google";
@@ -35,6 +35,10 @@ export async function generateCommitMessages(config: Config, diffs: string) {
     instructions: instructionPrompt,
     prompt: `<diff>\n${diffs}\n</diff>`,
   });
+
+  // ensure next run, it goes to the next credential if available
+  config.lastUsedKeyIndex = keyIndex;
+  saveConfig(config)
 
   return output.messages;
 }
