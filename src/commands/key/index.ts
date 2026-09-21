@@ -4,6 +4,11 @@ import keystore from "../../lib/keystore";
 import add from "./add";
 import remove from "./remove";
 
+function maskKey(key: string): string {
+  if (key.length <= 8) return "********";
+  return key.slice(0, 4) + "****" + key.slice(-4);
+}
+
 export default defineCommand({
   name: "key",
   commands: [add, remove],
@@ -12,7 +17,7 @@ export default defineCommand({
     const availableKeys = await keystore.getKeysFromKeyChain();
     console.log(`keys available: [${availableKeys.length}]`);
     for (const { account, password } of availableKeys) {
-      console.log(`   ${blueBright(account)} -> ${password.substring(0, 7)}...`);
+      console.log(`   ${blueBright(account)} -> ${maskKey(password)}...`);
     }
   },
 });
