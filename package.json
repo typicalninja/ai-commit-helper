@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.69",
+    "@clack/core": "^1.5.1",
     "@inquirer/prompts": "^7.5.3",
     "ai": "^7.0.99",
     "cac": "^6.7.14",
