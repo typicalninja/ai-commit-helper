@@ -12,7 +12,7 @@ export default defineCommand({
     const availableKeys = await keystore.getKeysFromKeyChain();
     console.log(`keys available: [${availableKeys.length}]`);
     for (const { account, password } of availableKeys) {
-      console.log(`   ${blueBright(account)} -> ${password.substring(0, 5)}...`);
+      console.log(`   ${blueBright(account)} -> ${password.substring(0, 7)}...`);
     }
   },
 });
