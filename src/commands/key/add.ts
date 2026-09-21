@@ -4,6 +4,7 @@ import keystore from "../../lib/keystore";
 
 export default defineCommand({
   name: "add",
+  alias: ["a"],
   description: "Add a Google API key to be used for generating commit messages",
   positionals: { key: { required: true } },
   action: async ({ positionals }) => {

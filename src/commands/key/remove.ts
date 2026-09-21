@@ -4,6 +4,7 @@ import keystore from "../../lib/keystore";
 
 export default defineCommand({
   name: "remove",
+  alias: ["r"],
   description: "Remove a Google API key from being used for generating commit messages",
   positionals: { key: { required: true } },
   action: async ({ positionals }) => {
