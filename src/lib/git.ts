@@ -1,6 +1,6 @@
 import { execa } from "execa";
 
-const execGit = (...args: string[]) => execa("git", args)
+const execGit = (...args: string[]) => execa("git", args);
 
 /**
  * Get the diff for all staged files in the current repository.
