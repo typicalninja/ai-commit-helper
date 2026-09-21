@@ -9,3 +9,11 @@ export async function getStagedDiffs() {
   const { stdout } = await execGit("diff", "--cached");
   return stdout.toString();
 }
+
+/**
+ * Commit the currently staged files with the given message.
+ */
+export async function commitStaged(message: string) {
+  const { stdout } = await execGit("commit", "-m", message);
+  return stdout.toString();
+}
