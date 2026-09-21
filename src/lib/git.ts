@@ -47,6 +47,14 @@ export async function getStagedDiffs() {
 }
 
 /**
+ * Per-file change summary of everything staged, including files omitted from the diff sent to the model.
+ */
+export async function getStagedStat() {
+  const { stdout } = await execGit("diff", "--cached", "--stat=72");
+  return stdout.toString().trim();
+}
+
+/**
  * Commit the currently staged files with the given message.
  * With `edit`, git opens the user's editor prefilled with the message (like `git commit -e`).
  */

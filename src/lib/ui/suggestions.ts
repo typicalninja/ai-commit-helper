@@ -31,9 +31,16 @@ function wrap(text: string, width: number) {
   });
 }
 
-/** Card carousel: <-/-> browse, enter commit, e edit, r regenerate, q/esc quit. Returns CANCEL symbol on quit. */
-export function pickCommit(messages: CommitMessage[]) {
+/** diffstat capped to a screenful: first files, then the "N files changed" summary line */
+function statLines(stat: string, max = 12) {
+  const lines = stat.split("\n");
+  return lines.length <= max ? lines : [...lines.slice(0, max - 2), `… ${lines.length - max + 1} more files`, lines.at(-1)!];
+}
+
+/** Card carousel: <-/-> browse, enter commit, e edit, r regenerate, d files, q/esc quit. Returns CANCEL symbol on quit. */
+export function pickCommit(messages: CommitMessage[], stat = "") {
   let index = 0;
+  let showStat = false;
   const bar = color.gray("│");
 
   const prompt = new Prompt<Pick>(
@@ -55,7 +62,8 @@ export function pickCommit(messages: CommitMessage[]) {
         return [
           `${color.gray("┌")}  ${color.dim(`suggestion ${index + 1}/${messages.length}`)}`,
           ...[head, ...body].map((l) => `${bar}  ${l}`),
-          `${color.gray("└")}  ${color.dim("←/→ browse · enter commit · e edit · r regenerate · q quit")}`,
+          ...(showStat ? [bar, ...statLines(stat).map((l) => `${bar}  ${color.dim(l)}`)] : []),
+          `${color.gray("└")}  ${color.dim("←/→ browse · enter commit · e edit · r regenerate · d files · q quit")}`,
         ].join("\n");
       },
     },
@@ -65,6 +73,7 @@ export function pickCommit(messages: CommitMessage[]) {
   prompt.on("key", (char, key) => {
     if (key.name === "left") index = (index + messages.length - 1) % messages.length;
     else if (key.name === "right") index = (index + 1) % messages.length;
+    else if (char === "d") showStat = !showStat;
     const action = char === "r" ? "regenerate" : char === "e" ? "edit" : "commit";
     if (action !== "commit") prompt.state = "submit";
     if (char === "q") prompt.state = "cancel";
