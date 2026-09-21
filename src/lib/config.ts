@@ -1,85 +1,11 @@
-import fs from "node:fs/promises";
 import path from "node:path";
+import fs from "node:fs/promises";
 import os from "node:os";
 import { z } from "zod";
 
-const providerConfigSchema = z.object({
-  baseUrl: z.string().optional(),
-});
-
 const configSchema = z.object({
-  provider: z.string().default("gemini"),
   model: z.string().default("gemini-2.5-flash-lite"),
-  ignore: z
-    .array(z.string())
-    .default([
-      // Dependencies
-      "**/node_modules/**",
-      "**/vendor/**",
-      "**/.pnp.*",
-      
-      // Build outputs
-      "**/dist/**",
-      "**/build/**",
-      "**/out/**",
-      "**/.next/**",
-      "**/.nuxt/**",
-      "**/.output/**",
-      "**/.vercel/**",
-      
-      // Binary and compiled files
-      "**/*.{pyc,pyo,class,o,obj,exe,dll,so,dylib}",
-      "**/__pycache__/**",
-      "**/*.egg-info/**",
-      
-      // Coverage and test reports
-      "**/coverage/**",
-      "**/.coverage",
-      "**/.nyc_output/**",
-      "**/htmlcov/**",
-      
-      // Logs
-      "**/*.log",
-      "**/logs/**",
-      "**/*.log.*",
-      
-      // IDE and editor files
-      "**/.vscode/**",
-      "**/.idea/**",
-      "**/*.swp",
-      "**/*.swo",
-      "**/*~",
-      
-      // OS files
-      "**/.DS_Store",
-      "**/Thumbs.db",
-      "**/desktop.ini",
-      
-      // Large data files
-      "**/*.{csv,tsv,parquet,avro}",
-      "**/*.{zip,tar,gz,rar,7z}",
-      "**/*.{jpg,jpeg,png,gif,bmp,ico,webp,svg}",
-      "**/*.{mp3,mp4,avi,mov,wmv,flv}",
-      "**/*.{pdf,doc,docx,xls,xlsx,ppt,pptx}",
-    ]),
-  summarize: z
-    .array(z.string())
-    .default([
-      // Lock files - show changes but not full content
-      "*.lock",
-      "*-lock.{json,yaml,yml}",
-      "*.lockb",
-      
-      // Large generated files
-      "**/*.min.{js,css}",
-      "**/*.bundle.{js,css}",
-      "**/*.generated.*",
-      "**/*-generated.*",
-      "**/*.gen.*",
-      "**/*-gen.*",
-    ]),
-  maxDiffLines: z.number().default(500),
-  providers: z.record(z.string(), providerConfigSchema).default({}),
+  lastUsedKeyIndex: z.int().default(0),
 });
 
 export type Config = z.infer<typeof configSchema>;
@@ -87,94 +13,31 @@ export type Config = z.infer<typeof configSchema>;
 const CONFIG_DIR = path.join(os.homedir(), ".config", "aic");
 const CONFIG_PATH = path.join(CONFIG_DIR, "config.json");
 
+let configCache: Config | null = null;
+
 export async function loadConfig(): Promise<Config> {
+  if (configCache) return Promise.resolve(configCache);
+
   try {
     const data = await fs.readFile(CONFIG_PATH, "utf-8");
-    return configSchema.parse(JSON.parse(data));
+    configCache = configSchema.parse(JSON.parse(data));
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-      return configSchema.parse({});
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+      throw error;
     }
-    throw error;
+
+    // parse on empty object, give us the default values
+    configCache = configSchema.parse({});
   }
+
+  return configCache;
 }
 
 export async function saveConfig(config: Config): Promise<void> {
+  configSchema.parse(config);
+  // update the cache
+  configCache = config;
+
   await fs.mkdir(CONFIG_DIR, { recursive: true });
   await fs.writeFile(CONFIG_PATH, JSON.stringify(config, null, 2) + "\n");
-}
-
-export function setConfigValue(
-  config: Config,
-  keyPath: string,
-  value: string,
-): Config {
-  const clone = structuredClone(config);
-  const keys = keyPath.split(".");
-  let current: Record<string, unknown> = clone as unknown as Record<
-    string,
-    unknown
-  >;
-
-  for (let i = 0; i < keys.length - 1; i++) {
-    const k = keys[i];
-    if (typeof current[k] !== "object" || current[k] === null) {
-      current[k] = {};
-    }
-    current = current[k] as Record<string, unknown>;
-  }
-
-  const lastKey = keys[keys.length - 1];
-
-  if (value === "true") current[lastKey] = true;
-  else if (value === "false") current[lastKey] = false;
-  else if (/^\d+$/.test(value)) current[lastKey] = Number.parseInt(value, 10);
-  else current[lastKey] = value;
-
-  return configSchema.parse(clone);
-}
-
-export function getConfigValue(config: Config, keyPath: string): unknown {
-  const keys = keyPath.split(".");
-  let current: unknown = config;
-
-  for (const key of keys) {
-    if (current === undefined || current === null) return undefined;
-    if (typeof current !== "object") return undefined;
-    current = (current as Record<string, unknown>)[key];
-  }
-
-  return current;
-}
-
-export function flattenConfig(config: Config): string[] {
-  const result: string[] = [];
-
-  function walk(obj: unknown, prefix: string) {
-    if (obj === null || obj === undefined) return;
-    if (Array.isArray(obj)) {
-      result.push(`${prefix}=${JSON.stringify(obj)}`);
-      return;
-    }
-    if (typeof obj === "object") {
-      for (const [key, value] of Object.entries(
-        obj as Record<string, unknown>,
-      )) {
-        walk(value, prefix ? `${prefix}.${key}` : key);
-      }
-      return;
-    }
-    result.push(`${prefix}=${obj}`);
-  }
-
-  walk(config, "");
-  return result;
-}
-
-export function resetConfig(): Config {
-  return configSchema.parse({});
-}
-
-export function getConfigPath(): string {
-  return CONFIG_PATH;
 }

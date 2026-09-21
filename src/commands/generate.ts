@@ -1,190 +1,53 @@
-import readline from "node:readline";
-import { loadConfig } from "../lib/config.ts";
-import {
-  isGitRepo,
-  getStagedFileStats,
-  getStagedDiff,
-  getFileSummaries,
-  commit,
-} from "../lib/git.ts";
-import { generate } from "../providers/resolver.ts";
-import { ProviderError } from "../providers/types.ts";
-import { selectFiles, type FileSelection } from "../ui/files.ts";
-import { commitBox, error, warn } from "../ui/format.ts";
-import { editor } from "@inquirer/prompts";
+import { isCancel } from "@clack/core";
 import ora from "ora";
-import { dim, bold } from "yoctocolors";
+import { loadConfig } from "../lib/config";
+import { commitStaged, getStagedDiffs, getStagedStat } from "../lib/git";
+import { generateCommitMessages, type GenerateOptions } from "../lib/llms/generate";
+import { askFeedback, formatCommit, pickCommit } from "../lib/ui/suggestions";
 
-function ask(prompt: string): Promise<string> {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-  return new Promise((resolve) => {
-    rl.question(prompt, (answer) => {
-      rl.close();
-      resolve(answer.trim().toLowerCase());
-    });
-  });
-}
-
-function truncateDiff(diff: string, maxLines: number): string {
-  const lines = diff.split("\n");
-  if (lines.length <= maxLines) return diff;
-  return (
-    lines.slice(0, maxLines).join("\n") +
-    `\n[truncated: ${lines.length - maxLines} lines omitted]`
-  );
-}
-
-export default async function runGenerateCommand(context: string[]) {
-  try {
-    await run(context);
-  } catch (err) {
-    if ((err as Error).name === "ExitPromptError") return;
-    console.error(error((err as Error).message));
-    process.exitCode = 1;
-  }
-}
-
-async function run(context: string[]) {
-  const userContext = context.join(" ") || undefined;
-
-  if (!(await isGitRepo())) {
-    console.error(error("not a git repository"));
-    process.exitCode = 1;
-    return;
-  }
-
+export default async function generateCommandAction(context?: string) {
   const config = await loadConfig();
-  const files = await getStagedFileStats();
+  const diffs = await getStagedDiffs();
+  if (!diffs.trim()) throw new Error("no staged changes. Stage files first: git add <files>");
+  const stat = await getStagedStat();
 
-  if (files.length === 0) {
-    console.error(
-      error("no staged changes. Stage files with: git add <files>"),
-    );
-    process.exitCode = 1;
-    return;
-  }
-
-  const selectedFiles = await selectFiles(files, config.ignore, config.summarize);
-
-  const totalSelected = selectedFiles.full.length + selectedFiles.summarized.length;
-  if (totalSelected === 0) {
-    console.error(error("no files selected"));
-    process.exitCode = 1;
-    return;
-  }
-
-  // Build combined diff: full diffs + summarized files
-  let diff = "";
-  
-  if (selectedFiles.full.length > 0) {
-    const fullDiff = await getStagedDiff(selectedFiles.full);
-    diff += fullDiff;
-  }
-  
-  if (selectedFiles.summarized.length > 0) {
-    const summaries = await getFileSummaries(selectedFiles.summarized, files);
-    if (summaries) {
-      if (diff) diff += "\n\n";
-      diff += "# Summarized files (changes only):\n" + summaries;
+  // Ctrl+C while waiting on the model aborts the request instead of killing the process mid-spinner.
+  // Returns undefined when aborted.
+  const generate = async (opts: GenerateOptions = {}) => {
+    const controller = new AbortController();
+    const abort = () => controller.abort();
+    process.once("SIGINT", abort);
+    const spinner = ora({ text: "generating commit messages (ctrl+c to cancel)" }).start();
+    try {
+      return await generateCommitMessages(config, diffs, { context, ...opts, signal: controller.signal });
+    } catch (error) {
+      if (controller.signal.aborted) return undefined;
+      throw error;
+    } finally {
+      spinner.stop();
+      process.off("SIGINT", abort);
     }
-  }
-  
-  diff = truncateDiff(diff, config.maxDiffLines);
+  };
 
-  if (!diff.trim()) {
-    console.error(error("staged diff is empty"));
-    process.exitCode = 1;
-    return;
+  let messages = await generate();
+  if (!messages) {
+    process.exitCode = 130;
+    return console.log("cancelled");
   }
 
-  const diffLines = diff.split("\n").length;
-  const fileInfo = selectedFiles.summarized.length > 0
-    ? `${selectedFiles.full.length} full + ${selectedFiles.summarized.length} summarized`
-    : `${selectedFiles.full.length} file(s)`;
-  console.log(
-    dim(
-      `\n${fileInfo}, ~${diffLines} diff lines -> ${config.provider}/${config.model}\n`,
-    ),
-  );
+  while (true) {
+    const pick = await pickCommit(messages, stat);
+    if (!pick || isCancel(pick)) return;
 
-  let commitMessage = await generateMessage(config, diff, userContext);
-  if (!commitMessage) return;
-
-  let done = false;
-  while (!done) {
-    console.log(commitBox(commitMessage));
-
-    const action = await ask(
-      `${dim("[c]ommit  [e]dit  [r]egenerate  [q]uit")} ${bold("?")} `,
-    );
-
-    switch (action) {
-      case "c":
-      case "commit":
-        try {
-          await commit(commitMessage);
-          done = true;
-        } catch (err) {
-          console.error(error(`commit failed: ${(err as Error).message}`));
-          console.log(warn("fix the issue and try again"));
-        }
-        break;
-
-      case "e":
-      case "edit": {
-        const edited = await editor({
-          message: "Edit commit message",
-          default: commitMessage,
-        });
-        if (edited.trim()) commitMessage = edited.trim();
-        break;
-      }
-
-      case "r":
-      case "regenerate": {
-        const msg = await generateMessage(config, diff, userContext);
-        if (msg) commitMessage = msg;
-        break;
-      }
-
-      case "q":
-      case "quit":
-        done = true;
-        break;
-
-      default:
-        break;
+    if (pick.action === "regenerate") {
+      const feedback = await askFeedback();
+      if (isCancel(feedback)) continue; // esc: back to the same suggestions
+      // aborted regenerate keeps the current suggestions
+      messages = (await generate({ previous: pick.message, feedback: feedback || undefined })) ?? messages;
+      continue;
     }
-  }
-}
 
-async function generateMessage(
-  config: Parameters<typeof generate>[0],
-  diff: string,
-  context?: string,
-): Promise<string | null> {
-  const spinner = ora("generating...").start();
-
-  try {
-    const result = await generate(config, diff, context);
-    spinner.succeed("done");
-    return result.message;
-  } catch (err) {
-    spinner.fail("failed");
-    if (err instanceof ProviderError) {
-      console.error(error(err.message));
-      if (err.status === 429) {
-        console.error(
-          warn("rate limited. Add more keys with: aic add-key <provider> <key>"),
-        );
-      }
-    } else {
-      console.error(error((err as Error).message));
-    }
-    process.exitCode = 1;
-    return null;
+    const output = await commitStaged(formatCommit(pick.message), pick.action === "edit");
+    return output && console.log(output);
   }
 }

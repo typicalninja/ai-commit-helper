@@ -1,58 +1,33 @@
 import keytar from "keytar";
+import crypto from "node:crypto";
 
-const SERVICE = "aic-cli";
+const SERVICE_NAME = "aic-cli";
 
-function accountName(provider: string): string {
-  return `aic-${provider}`;
+const sha256 = (str: string) => crypto.createHash("sha256").update(str).digest("hex");
+
+/**
+ * Add the provided value to the device keychain.
+ * Uses the first 8 letters of the hash of the value as keychain account.
+ */
+async function addToKeyChain(value: string): Promise<string> {
+  // get the first 8 characters after hashing the value
+  const accountName = sha256(value).substring(0, 8);
+  await keytar.setPassword(SERVICE_NAME, accountName, value);
+  return accountName;
 }
 
-async function keychainGet(provider: string): Promise<string | null> {
-  return keytar.getPassword(SERVICE, accountName(provider));
+/**
+ * Get the list of saved keys from the keychain
+ */
+async function getKeysFromKeyChain() {
+  return await keytar.findCredentials(SERVICE_NAME);
 }
 
-async function keychainSet(provider: string, value: string): Promise<void> {
-  await keytar.setPassword(SERVICE, accountName(provider), value);
+/**
+ * Remove the specified account/API key from the keychain.
+ */
+async function deleteKeyFromKeyChain(accountName: string): Promise<boolean> {
+  return await keytar.deletePassword(SERVICE_NAME, accountName);
 }
 
-async function keychainDelete(provider: string): Promise<void> {
-  await keytar.deletePassword(SERVICE, accountName(provider));
-}
-
-export async function getKeys(provider: string): Promise<string[]> {
-  const raw = await keychainGet(provider);
-  if (!raw) return [];
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    if (Array.isArray(parsed) && parsed.every((k) => typeof k === "string")) {
-      return parsed as string[];
-    }
-    return [];
-  } catch {
-    return [];
-  }
-}
-
-export async function addKey(
-  provider: string,
-  key: string,
-): Promise<string[]> {
-  const keys = await getKeys(provider);
-  keys.push(key);
-  await keychainSet(provider, JSON.stringify(keys));
-  return keys;
-}
-
-export async function removeKey(
-  provider: string,
-  index: number,
-): Promise<string[]> {
-  const keys = await getKeys(provider);
-  if (index < 0 || index >= keys.length) return keys;
-  keys.splice(index, 1);
-  if (keys.length === 0) {
-    await keychainDelete(provider);
-  } else {
-    await keychainSet(provider, JSON.stringify(keys));
-  }
-  return keys;
-}
+export default { addToKeyChain, getKeysFromKeyChain, deleteKeyFromKeyChain };
