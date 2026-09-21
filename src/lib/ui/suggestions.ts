@@ -2,7 +2,7 @@ import { Prompt } from "@clack/core";
 import color from "yoctocolors";
 import type { CommitMessage } from "../llms/generate";
 
-export type Pick = { action: "commit" | "regenerate"; message: CommitMessage };
+export type Pick = { action: "commit" | "edit" | "regenerate"; message: CommitMessage };
 
 const typeColor: Record<string, (s: string) => string> = {
   feat: color.green,
@@ -31,7 +31,7 @@ function wrap(text: string, width: number) {
   });
 }
 
-/** Card carousel: <-/-> browse, enter commit, r regenerate, q/esc quit. Returns CANCEL symbol on quit. */
+/** Card carousel: <-/-> browse, enter commit, e edit, r regenerate, q/esc quit. Returns CANCEL symbol on quit. */
 export function pickCommit(messages: CommitMessage[]) {
   let index = 0;
   const bar = color.gray("│");
@@ -50,7 +50,7 @@ export function pickCommit(messages: CommitMessage[]) {
         return [
           `${color.gray("┌")}  ${color.dim(`suggestion ${index + 1}/${messages.length}`)}`,
           ...[head, ...body].map((l) => `${bar}  ${l}`),
-          `${color.gray("└")}  ${color.dim("←/→ browse · enter commit · r regenerate · q quit")}`,
+          `${color.gray("└")}  ${color.dim("←/→ browse · enter commit · e edit · r regenerate · q quit")}`,
         ].join("\n");
       },
     },
@@ -60,10 +60,10 @@ export function pickCommit(messages: CommitMessage[]) {
   prompt.on("key", (char, key) => {
     if (key.name === "left") index = (index + messages.length - 1) % messages.length;
     else if (key.name === "right") index = (index + 1) % messages.length;
-    const regenerate = char === "r";
-    if (regenerate) prompt.state = "submit";
+    const action = char === "r" ? "regenerate" : char === "e" ? "edit" : "commit";
+    if (action !== "commit") prompt.state = "submit";
     if (char === "q") prompt.state = "cancel";
-    prompt.value = { action: regenerate ? "regenerate" : "commit", message: messages[index] };
+    prompt.value = { action, message: messages[index] };
   });
 
   return prompt.prompt();

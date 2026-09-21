@@ -15,6 +15,9 @@ export default async function generateCommandAction(_context?: string) {
     const messages = await generateCommitMessages(config, diffs).finally(() => spinner.stop());
     const pick = await pickCommit(messages);
     if (!pick || isCancel(pick)) return;
-    if (pick.action === "commit") return console.log(await commitStaged(formatCommit(pick.message)));
+    if (pick.action !== "regenerate") {
+      const output = await commitStaged(formatCommit(pick.message), pick.action === "edit");
+      return output && console.log(output);
+    }
   }
 }
