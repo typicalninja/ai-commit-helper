@@ -22,7 +22,7 @@ Respond with one JSON object: {"messages": [ ...commit messages... ]}
 
 ## Input
 The user message has these tags:
-- <diff>: the staged changes. This is the source of truth for what changed.
+- <diff>: the staged changes. This is the source of truth for what changed. It can end with a list of omitted lock or generated files (sizes only). Do not describe those as the main change, unless they are the only change, e.g. a lockfile-only diff is a dependency update (chore or build).
 - <context>: optional. The user's notes on why or what. Use it for motivation in the body and for wording, but never claim changes the diff does not show.
 - <previous>: optional. A suggestion the user is revising, as JSON.
   - With <feedback>: treat the feedback as edit instructions for this suggestion. Keep every field the feedback does not ask to change, word for word (e.g. "keep the description, add a body" means same type, scope and description, plus a new body). The first message must be this revised suggestion. Any others may be alternatives.
