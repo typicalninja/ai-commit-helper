@@ -34,10 +34,10 @@ const truncateFiles = (diff: string) =>
  * so a lockfile-only commit still yields something to describe.
  */
 export async function getStagedDiffs() {
-  const noise = NOISE_GLOBS.map((g) => `:(glob)${g}`);
-  const exclude = NOISE_GLOBS.map((g) => `:(exclude,glob)${g}`);
+  const noise = NOISE_GLOBS.map((g) => `:(top,glob)${g}`);
+  const exclude = NOISE_GLOBS.map((g) => `:(top,exclude,glob)${g}`);
   const [{ stdout: diff }, { stdout: omitted }] = await Promise.all([
-    execGit("diff", "--cached", "--", ".", ...exclude),
+    execGit("diff", "--cached", "--", ":/", ...exclude),
     execGit("diff", "--cached", "--numstat", "--", ...noise),
   ]);
   const kept = truncateFiles(diff);
